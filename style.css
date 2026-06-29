@@ -191,8 +191,8 @@ h2 {
     flex: 1;
     min-width: 150px;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid rgba(203, 213, 225, 0.8);
     border-radius: 12px;
     color: var(--text-main);
     font-size: 1.1rem;
