@@ -406,6 +406,7 @@
                     const secHeader = document.createElement('div');
                     secHeader.classList.add('form-section-header');
                     secHeader.textContent = field.section;
+                    secHeader.dataset.sectionName = field.section;
                     dynamicFieldsContainer.appendChild(secHeader);
                     currentSection = field.section;
                     currentRowGroup = null;
@@ -414,6 +415,7 @@
                 const group = document.createElement('div');
                 group.classList.add('input-group');
                 group.dataset.fieldId = field.id;
+                group.dataset.sectionName = field.section;
                 
                 if (field.showIf) {
                     group.classList.add('hidden');
@@ -494,6 +496,22 @@
                             targetInput.value = ''; // clear value
                         }
                     }
+                }
+            });
+
+            // Update section header visibility based on child input groups
+            const headers = document.querySelectorAll('.form-section-header');
+            headers.forEach(header => {
+                const sectionName = header.dataset.sectionName;
+                if (sectionName) {
+                    const groups = document.querySelectorAll(`.input-group[data-section-name="${sectionName}"]`);
+                    let isAnyVisible = false;
+                    groups.forEach(group => {
+                        if (!group.classList.contains('hidden')) {
+                            isAnyVisible = true;
+                        }
+                    });
+                    header.style.display = isAnyVisible ? 'block' : 'none';
                 }
             });
         }
