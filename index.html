@@ -226,27 +226,28 @@
             { section: '운영 관련 사항', id: 'electricityCapacity', label: '전기 희망 용량(W)', type: 'text', required: true, showIf: { field: 'electricity', value: '희망' } },
             { section: '운영 관련 사항', id: 'boothOpType', label: '부스 운영방법', type: 'select', options: ['선택하세요', '작품소개만', '동작하며 경험', '만들고놔두기', '만들어가져가기'], required: true },
             
-            { section: '체험(선택)', id: 'expTopic', label: '체험주제', type: 'text', required: false },
-            { section: '체험(선택)', id: 'expDesc', label: '체험설명', type: 'textarea', required: false },
-            { section: '체험(선택)', id: 'expFeeType', label: '체험비', type: 'select', options: ['선택하세요', '무료', '유료'], required: false },
+            { section: '체험(선택)', id: 'expTopic', label: '체험주제', type: 'text', required: false, showIf: { field: 'boothOpType', value: ['동작하며 경험', '만들고놔두기', '만들어가져가기'] } },
+            { section: '체험(선택)', id: 'expDesc', label: '체험설명', type: 'textarea', required: false, showIf: { field: 'boothOpType', value: ['동작하며 경험', '만들고놔두기', '만들어가져가기'] } },
+            { section: '체험(선택)', id: 'expFeeType', label: '체험비', type: 'select', options: ['선택하세요', '무료', '유료'], required: false, showIf: { field: 'boothOpType', value: ['동작하며 경험', '만들고놔두기', '만들어가져가기'] } },
             { section: '체험(선택)', id: 'expFeeDesc', label: '유료 체험 상세 및 금액', type: 'text', required: false, showIf: { field: 'expFeeType', value: '유료' } },
             
-            { section: '지원사항(선택)', id: 'lunchCount', label: '중식인원(명)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_XS', label: '단체복(XS) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_S', label: '단체복(S) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_M', label: '단체복(M) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_L', label: '단체복(L) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_XL', label: '단체복(XL) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_2XL', label: '단체복(2XL) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'uniformCount_3XL', label: '단체복(3XL) 수량', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'transportRegion', label: '교통비(지역)', type: 'text', required: false },
-            { section: '지원사항(선택)', id: 'transportCost', label: '교통비(예상금액)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'accomodationDate', label: '숙박 날짜', type: 'select', options: ['선택안함', '9.4.(금)', '9.5.(토)', '모두'], required: false },
-            { section: '지원사항(선택)', id: 'accomodationMale', label: '숙박 인원(남자)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'accomodationFemale', label: '숙박 인원(여자)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'breakfastCount', label: '조식인원(명)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'networkPartyCount', label: '네트워크 파티 인원(명)', type: 'number', required: false },
-            { section: '지원사항(선택)', id: 'starGazingCount', label: '야간천체관측 인원(명)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'lunchCount', label: '중식인원(명)', type: 'number', required: false, rowGroup: 'lunch' },
+            { section: '지원사항(선택)', id: 'uniformCount_XS', label: '단체복(XS) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_S', label: '단체복(S) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_M', label: '단체복(M) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_L', label: '단체복(L) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_XL', label: '단체복(XL) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_2XL', label: '단체복(2XL) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'uniformCount_3XL', label: '단체복(3XL) 수량', type: 'number', required: false, rowGroup: 'uniform' },
+            { section: '지원사항(선택)', id: 'transportRegion', label: '교통비(지역)', type: 'text', required: false, rowGroup: 'transport' },
+            { section: '지원사항(선택)', id: 'transportCost', label: '교통비(예상금액)', type: 'number', required: false, rowGroup: 'transport' },
+            { section: '지원사항(선택)', id: 'accomodationDate', label: '숙박 날짜', type: 'select', options: ['선택안함', '9.4.(금)', '9.5.(토)', '모두'], required: false, rowGroup: 'accom' },
+            { section: '지원사항(선택)', id: 'accomodationMale', label: '숙박 인원(남자)', type: 'number', required: false, rowGroup: 'accom' },
+            { section: '지원사항(선택)', id: 'accomodationFemale', label: '숙박 인원(여자)', type: 'number', required: false, rowGroup: 'accom' },
+            { section: '지원사항(선택)', id: 'roomCount', label: '필요객실(개)', type: 'number', required: false, rowGroup: 'accom' },
+            { section: '지원사항(선택)', id: 'breakfastCount', label: '조식인원(명)', type: 'number', required: false, rowGroup: 'extra' },
+            { section: '지원사항(선택)', id: 'networkPartyCount', label: '네트워크 파티 인원(명)', type: 'number', required: false, rowGroup: 'extra' },
+            { section: '지원사항(선택)', id: 'starGazingCount', label: '야간천체관측 인원(명)', type: 'number', required: false, rowGroup: 'extra' },
             
             { section: '기타사항(선택)', id: 'etcComment', label: '기타사항', type: 'textarea', required: false }
         ];
@@ -397,6 +398,8 @@
             const allFieldsForCategory = [...schema, ...filteredCustomFields];
 
             let currentSection = '';
+            let currentRowGroup = null;
+            let rowGroupDiv = null;
 
             allFieldsForCategory.forEach(field => {
                 if (field.section && field.section !== currentSection) {
@@ -405,6 +408,7 @@
                     secHeader.textContent = field.section;
                     dynamicFieldsContainer.appendChild(secHeader);
                     currentSection = field.section;
+                    currentRowGroup = null;
                 }
 
                 const group = document.createElement('div');
@@ -447,7 +451,19 @@
 
                 group.appendChild(label);
                 group.appendChild(input);
-                dynamicFieldsContainer.appendChild(group);
+                
+                if (field.rowGroup) {
+                    if (currentRowGroup !== field.rowGroup) {
+                        rowGroupDiv = document.createElement('div');
+                        rowGroupDiv.classList.add('row-group-container');
+                        dynamicFieldsContainer.appendChild(rowGroupDiv);
+                        currentRowGroup = field.rowGroup;
+                    }
+                    rowGroupDiv.appendChild(group);
+                } else {
+                    currentRowGroup = null;
+                    dynamicFieldsContainer.appendChild(group);
+                }
             });
             
             // initial check for conditionals
@@ -462,7 +478,14 @@
                     const targetInput = document.getElementById(`input-${field.id}`);
                     
                     if (dependencyInput && targetGroup) {
-                        if (dependencyInput.value === field.showIf.value) {
+                        let isMatch = false;
+                        if (Array.isArray(field.showIf.value)) {
+                            isMatch = field.showIf.value.includes(dependencyInput.value);
+                        } else {
+                            isMatch = dependencyInput.value === field.showIf.value;
+                        }
+
+                        if (isMatch) {
                             targetGroup.classList.remove('hidden');
                             if (field.required) targetInput.required = true;
                         } else {

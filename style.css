@@ -242,6 +242,18 @@ h2 {
     grid-column: 1 / -1;
 }
 
+.row-group-container {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.row-group-container .input-group {
+    flex: 1;
+    min-width: 150px;
+}
+
 .input-group label {
     font-size: 0.9rem;
     color: var(--text-muted);
