@@ -102,6 +102,19 @@
 
             <!-- Field Visibility Selector -->
             <div class="field-selector glass-card">
+                <div style="margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <strong style="margin-right: 1rem; color: var(--text-main);">조회할 메이커 구분:</strong>
+                    <select id="dashboard-category-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 200px;">
+                        <option value="전체">모든 메이커 (전체)</option>
+                        <option value="개인">개인</option>
+                        <option value="전문(단체)">전문(단체)</option>
+                        <option value="중고교">중고교</option>
+                        <option value="공방">공방</option>
+                        <option value="기업">기업</option>
+                        <option value="기관">기관</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
                 <h4>표시할 데이터 선택</h4>
                 <div id="column-toggles" class="checkbox-group">
                     <!-- Checkboxes will be dynamically rendered here -->
@@ -252,6 +265,12 @@
             { section: '기타사항(선택)', id: 'etcComment', label: '기타사항', type: 'textarea', required: false }
         ];
 
+        const TOGGLE_GROUPS = [
+            { label: '단체복', fields: ['uniformCount_XS', 'uniformCount_S', 'uniformCount_M', 'uniformCount_L', 'uniformCount_XL', 'uniformCount_2XL', 'uniformCount_3XL'] },
+            { label: '교통비', fields: ['transportRegion', 'transportCost'] },
+            { label: '숙박', fields: ['accomodationDate', 'accomodationMale', 'accomodationFemale', 'roomCount'] }
+        ];
+
         const SCHEMAS = {
             '개인': [
                 { section: '기본정보', id: 'name', label: '이름', type: 'text', required: true },
@@ -319,18 +338,28 @@
         // Default visible columns in dashboard (basic ones)
         let visibleColumns = new Set(['category', 'name', 'phone', 'mainProjectName', 'opLocation']);
 
-        function getAllUniqueFields() {
+        function getAllUniqueFields(categoryFilter = '전체') {
             const map = new Map();
-            Object.values(SCHEMAS).forEach(schema => {
-                schema.forEach(field => {
-                    if (!map.has(field.id)) {
-                        map.set(field.id, { id: field.id, label: field.label, type: field.type });
-                    }
+            if (categoryFilter !== '전체') {
+                const schema = SCHEMAS[categoryFilter] || [];
+                schema.forEach(field => map.set(field.id, { id: field.id, label: field.label, type: field.type }));
+                customFields.forEach(f => {
+                   if (!f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === categoryFilter) {
+                       if (!map.has(f.id)) map.set(f.id, f);
+                   }
                 });
-            });
-            customFields.forEach(field => {
-                if (!map.has(field.id)) map.set(field.id, field);
-            });
+            } else {
+                Object.values(SCHEMAS).forEach(schema => {
+                    schema.forEach(field => {
+                        if (!map.has(field.id)) {
+                            map.set(field.id, { id: field.id, label: field.label, type: field.type });
+                        }
+                    });
+                });
+                customFields.forEach(field => {
+                    if (!map.has(field.id)) map.set(field.id, field);
+                });
+            }
             return Array.from(map.values());
         }
 
@@ -556,6 +585,17 @@
         // --- Dashboard ---
         async function refreshDashboard() {
             registrations = await getRegistrations();
+            
+            const filterSelect = document.getElementById('dashboard-category-filter');
+            if (filterSelect && !filterSelect.hasAttribute('data-bound')) {
+                filterSelect.addEventListener('change', () => {
+                    renderColumnToggles();
+                    renderStats();
+                    renderTable();
+                });
+                filterSelect.setAttribute('data-bound', 'true');
+            }
+
             renderColumnToggles();
             renderStats();
             renderTable();
@@ -563,46 +603,82 @@
 
         function renderColumnToggles() {
             columnToggles.innerHTML = '';
-            const allFields = getAllUniqueFields();
-            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
+            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const allFields = getAllUniqueFields(categoryFilter);
             
+            const toggleItems = [];
+            const processedFields = new Set();
+            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
+
             all.forEach(field => {
+                if (processedFields.has(field.id)) return;
+                
+                const group = TOGGLE_GROUPS.find(g => g.fields.includes(field.id));
+                if (group) {
+                    toggleItems.push({ isGroup: true, label: group.label, fields: group.fields });
+                    group.fields.forEach(fid => processedFields.add(fid));
+                } else {
+                    toggleItems.push({ isGroup: false, id: field.id, label: field.label });
+                    processedFields.add(field.id);
+                }
+            });
+            
+            toggleItems.forEach(item => {
                 const label = document.createElement('label');
                 label.classList.add('checkbox-label');
-                if (visibleColumns.has(field.id)) label.classList.add('active-filter');
+                
+                let isChecked = false;
+                if (item.isGroup) {
+                    isChecked = item.fields.every(fid => visibleColumns.has(fid));
+                } else {
+                    isChecked = visibleColumns.has(item.id);
+                }
+                
+                if (isChecked) label.classList.add('active-filter');
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.checked = visibleColumns.has(field.id);
-                checkbox.dataset.id = field.id;
+                checkbox.checked = isChecked;
                 
                 checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        visibleColumns.add(field.id);
-                        label.classList.add('active-filter');
+                    if (item.isGroup) {
+                        item.fields.forEach(fid => {
+                            if (e.target.checked) visibleColumns.add(fid);
+                            else visibleColumns.delete(fid);
+                        });
                     } else {
-                        visibleColumns.delete(field.id);
-                        label.classList.remove('active-filter');
+                        if (e.target.checked) visibleColumns.add(item.id);
+                        else visibleColumns.delete(item.id);
                     }
+                    
+                    if (e.target.checked) label.classList.add('active-filter');
+                    else label.classList.remove('active-filter');
+                    
                     renderTable();
                 });
                 
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(' ' + field.label));
+                label.appendChild(document.createTextNode(' ' + item.label));
                 columnToggles.appendChild(label);
             });
         }
 
         function renderStats() {
             statsContainer.innerHTML = '';
-            const allFields = getAllUniqueFields();
+            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const allFields = getAllUniqueFields(categoryFilter);
             const numberFields = allFields.filter(f => f.type === 'number');
             
-            createStatCard('전체 등록 수', registrations.length + '팀');
+            let displayRegs = registrations;
+            if (categoryFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
+            }
+            
+            createStatCard('전체 등록 수', displayRegs.length + '팀');
             
             numberFields.forEach(field => {
-                const total = registrations.reduce((sum, reg) => sum + (Number(reg[field.id]) || 0), 0);
-                if(total > 0) { // Only show stat cards if total is > 0 to avoid clutter
+                const total = displayRegs.reduce((sum, reg) => sum + (Number(reg[field.id]) || 0), 0);
+                if(total > 0) {
                     createStatCard(field.label, total);
                 }
             });
@@ -619,7 +695,8 @@
             tableHeadRow.innerHTML = '';
             tableBody.innerHTML = '';
             
-            const allFields = getAllUniqueFields();
+            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const allFields = getAllUniqueFields(categoryFilter);
             const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
             const activeFields = all.filter(f => visibleColumns.has(f.id));
             
@@ -629,7 +706,12 @@
                 tableHeadRow.appendChild(th);
             });
             
-            registrations.forEach(reg => {
+            let displayRegs = registrations;
+            if (categoryFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
+            }
+            
+            displayRegs.forEach(reg => {
                 const tr = document.createElement('tr');
                 activeFields.forEach(f => {
                     const td = document.createElement('td');
@@ -686,11 +768,19 @@
                 return;
             }
             
-            const allFields = getAllUniqueFields();
-            const headers = ['메이커 구분', ...allFields.map(f => f.label)];
-            const keys = ['category', ...allFields.map(f => f.id)];
+            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const allFields = getAllUniqueFields(categoryFilter);
             
-            const dataToExport = registrations.map(reg => {
+            let displayRegs = registrations;
+            if (categoryFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
+            }
+
+            const activeFields = allFields.filter(f => visibleColumns.has(f.id));
+            const headers = ['메이커 구분', ...activeFields.map(f => f.label)];
+            const keys = ['category', ...activeFields.map(f => f.id)];
+            
+            const dataToExport = displayRegs.map(reg => {
                 const row = {};
                 keys.forEach((key, index) => {
                     row[headers[index]] = reg[key] || '';
