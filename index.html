@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maker Event Registration</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <header class="glass-header">
+        <div class="logo">Maker<span>Space</span></div>
+        <nav>
+            <button id="nav-register" class="nav-btn active">신청하기</button>
+            <button id="nav-dashboard" class="nav-btn">데이터 확인</button>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Section: Registration -->
+        <section id="sec-register" class="glass-panel active">
+            <h2>참가자 정보 입력</h2>
+            <p class="subtitle">메이커 구분을 선택하고 신청 정보를 입력해주세요.</p>
+            
+            <div class="category-selector">
+                <button class="cat-btn" data-type="개인">개인</button>
+                <button class="cat-btn" data-type="공방">공방</button>
+                <button class="cat-btn" data-type="전문(단체)">전문(단체)</button>
+                <button class="cat-btn" data-type="중고교">중고교</button>
+            </div>
+
+            <form id="registration-form" class="hidden">
+                <input type="hidden" id="maker-category" name="category">
+                
+                <div class="form-grid" id="dynamic-fields-container">
+                    <!-- Fields rendered dynamically -->
+                </div>
+
+                <div class="form-actions" style="grid-column: 1 / -1; margin-top: 2rem;">
+                    <button type="submit" class="btn-primary" style="width: 100%;">신청 등록</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Section: Dashboard -->
+        <section id="sec-dashboard" class="glass-panel hidden">
+            <div class="dashboard-header">
+                <h2>신청 데이터 확인</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="btn-export-excel" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);">엑셀 다운로드</button>
+                    <button id="btn-add-field" class="btn-secondary">+ 구분 추가 (항목 추가)</button>
+                </div>
+            </div>
+            
+            <!-- Dynamic Field Addition Modal -->
+            <div id="add-field-modal" class="hidden glass-card modal">
+                <h3>새로운 입력 항목 추가</h3>
+                <div class="input-group">
+                    <label>적용할 메이커 구분</label>
+                    <select id="new-field-category">
+                        <option value="모든 구분">모든 구분 (공통)</option>
+                        <option value="개인">개인</option>
+                        <option value="공방">공방</option>
+                        <option value="전문(단체)">전문(단체)</option>
+                        <option value="중고교">중고교</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>항목 식별자 (영어, 예: extraReq)</label>
+                    <input type="text" id="new-field-id" placeholder="영문 식별자 입력">
+                </div>
+                <div class="input-group">
+                    <label>표시 이름 (예: 추가 요구 사항, 전기 사용량)</label>
+                    <input type="text" id="new-field-name" placeholder="항목 이름 입력">
+                </div>
+                <div class="input-group">
+                    <label>항목 타입</label>
+                    <select id="new-field-type">
+                        <option value="text">텍스트 (일반)</option>
+                        <option value="number">숫자 (합산 가능)</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-confirm-add-field" class="btn-primary">추가</button>
+                    <button id="btn-cancel-add-field" class="btn-text">취소</button>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="stats-overview" id="stats-container">
+                <!-- Calculated totals will appear here -->
+            </div>
+
+            <!-- Field Visibility Selector -->
+            <div class="field-selector glass-card">
+                <h4>표시할 데이터 선택</h4>
+                <div id="column-toggles" class="checkbox-group">
+                    <!-- Checkboxes will be dynamically rendered here -->
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <table id="data-table">
+                    <thead>
+                        <tr id="table-head-row">
+                            <!-- Headers rendered dynamically -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Rows rendered dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- App Logic & Firebase SDK (Inlined to prevent CORS issues on file:/// access) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // TODO: Replace this with your actual Firebase project configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBT29JIObeHSFoEXsUtyKU7WkvVfjKz2fw",
+            authDomain: "hellomaker-af115.firebaseapp.com",
+            projectId: "hellomaker-af115",
+            storageBucket: "hellomaker-af115.firebasestorage.app",
+            messagingSenderId: "741777800111",
+            appId: "1:741777800111:web:2d3e828306c67372930d5a"
+        };
+
+        let app, db;
+        let isFirebaseInitialized = false;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                isFirebaseInitialized = true;
+                console.log("Firebase initialized successfully.");
+            } else {
+                console.warn("Firebase config is missing. Falling back to LocalStorage for demonstration.");
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        async function addRegistration(data) {
+            if (isFirebaseInitialized) {
+                try {
+                    const docRef = await addDoc(collection(db, "registrations"), data);
+                    return docRef.id;
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    throw e;
+                }
+            } else {
+                const regs = JSON.parse(localStorage.getItem('registrations') || '[]');
+                data.id = Date.now().toString();
+                regs.push(data);
+                localStorage.setItem('registrations', JSON.stringify(regs));
+                return data.id;
+            }
+        }
+
+        async function getRegistrations() {
+            if (isFirebaseInitialized) {
+                const querySnapshot = await getDocs(collection(db, "registrations"));
+                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } else {
+                return JSON.parse(localStorage.getItem('registrations') || '[]');
+            }
+        }
+
+        async function saveCustomFields(fields) {
+            if (isFirebaseInitialized) {
+                await setDoc(doc(db, "settings", "formFields"), { fields });
+            } else {
+                localStorage.setItem('customFields', JSON.stringify(fields));
+            }
+        }
+
+        async function getCustomFields() {
+            if (isFirebaseInitialized) {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "settings"));
+                    let fields = [];
+                    querySnapshot.forEach(doc => {
+                        if (doc.id === 'formFields') fields = doc.data().fields;
+                    });
+                    return fields;
+                } catch(e) { return []; }
+            } else {
+                return JSON.parse(localStorage.getItem('customFields') || '[]');
+            }
+        }
+
+        // --- SCHEMAS ---
+        const BASE_SCHEMA = [
+            { section: '메인작품', id: 'mainProjectName', label: '작품명', type: 'text', required: true },
+            { section: '메인작품', id: 'mainProjectCompleteness', label: '완성도', type: 'select', options: ['선택하세요', '0~25%', '26~50%', '51~75%', '76~99%', '100%'], required: true },
+            { section: '메인작품', id: 'mainProjectSpecs', label: '작품사양', type: 'text', required: true },
+            { section: '메인작품', id: 'mainProjectCategory', label: '분야', type: 'text', required: true },
+            { section: '메인작품', id: 'mainProjectMotivation', label: '개발동기', type: 'textarea', required: true },
+            { section: '메인작품', id: 'mainProjectDesc', label: '작품설명', type: 'textarea', required: true },
+            
+            { section: '추가작품(선택)', id: 'subProjectName', label: '추가 작품명', type: 'text', required: false },
+            { section: '추가작품(선택)', id: 'subProjectSpecs', label: '추가 작품사양', type: 'text', required: false },
+            { section: '추가작품(선택)', id: 'subProjectCategory', label: '추가 분야', type: 'text', required: false },
+            { section: '추가작품(선택)', id: 'subProjectDesc', label: '추가 작품설명', type: 'textarea', required: false },
+            
+            { section: '운영 관련 사항', id: 'opLocation', label: '운영희망장소', type: 'select', options: ['선택하세요', '실내(김진재홀)', '실내(로비공간)', '야외'], required: true },
+            { section: '운영 관련 사항', id: 'tableCount', label: '테이블 수량(개)', type: 'number', required: true },
+            { section: '운영 관련 사항', id: 'chairCount', label: '의자 수량(개)', type: 'number', required: true },
+            { section: '운영 관련 사항', id: 'electricity', label: '전기 사용여부', type: 'select', options: ['선택하세요', '희망하지 않음', '희망'], required: true },
+            { section: '운영 관련 사항', id: 'electricityCapacity', label: '전기 희망 용량(W)', type: 'text', required: true, showIf: { field: 'electricity', value: '희망' } },
+            { section: '운영 관련 사항', id: 'boothOpType', label: '부스 운영방법', type: 'select', options: ['선택하세요', '작품소개만', '동작하며 경험', '만들고놔두기', '만들어가져가기'], required: true },
+            
+            { section: '체험(선택)', id: 'expTopic', label: '체험주제', type: 'text', required: false },
+            { section: '체험(선택)', id: 'expDesc', label: '체험설명', type: 'textarea', required: false },
+            { section: '체험(선택)', id: 'expFeeType', label: '체험비', type: 'select', options: ['선택하세요', '무료', '유료'], required: false },
+            { section: '체험(선택)', id: 'expFeeDesc', label: '유료 체험 상세 및 금액', type: 'text', required: false, showIf: { field: 'expFeeType', value: '유료' } },
+            
+            { section: '지원사항(선택)', id: 'lunchCount', label: '중식인원(명)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_XS', label: '단체복(XS) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_S', label: '단체복(S) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_M', label: '단체복(M) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_L', label: '단체복(L) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_XL', label: '단체복(XL) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_2XL', label: '단체복(2XL) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'uniformCount_3XL', label: '단체복(3XL) 수량', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'transportRegion', label: '교통비(지역)', type: 'text', required: false },
+            { section: '지원사항(선택)', id: 'transportCost', label: '교통비(예상금액)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'accomodationDate', label: '숙박 날짜', type: 'select', options: ['선택안함', '9.4.(금)', '9.5.(토)', '모두'], required: false },
+            { section: '지원사항(선택)', id: 'accomodationMale', label: '숙박 인원(남자)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'accomodationFemale', label: '숙박 인원(여자)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'breakfastCount', label: '조식인원(명)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'networkPartyCount', label: '네트워크 파티 인원(명)', type: 'number', required: false },
+            { section: '지원사항(선택)', id: 'starGazingCount', label: '야간천체관측 인원(명)', type: 'number', required: false },
+            
+            { section: '기타사항(선택)', id: 'etcComment', label: '기타사항', type: 'textarea', required: false }
+        ];
+
+        const SCHEMAS = {
+            '개인': [
+                { section: '기본정보', id: 'name', label: '이름', type: 'text', required: true },
+                { section: '기본정보', id: 'email', label: '이메일', type: 'email', required: true },
+                { section: '기본정보', id: 'phone', label: '휴대전화', type: 'tel', required: true },
+                { section: '기본정보', id: 'landline', label: '유선전화', type: 'tel', required: false },
+                ...BASE_SCHEMA
+            ],
+            '전문(단체)': [
+                { section: '기본정보', id: 'groupName', label: '단체명', type: 'text', required: true },
+                { section: '기본정보', id: 'name', label: '이름(직위)', type: 'text', required: true },
+                { section: '기본정보', id: 'email', label: '이메일', type: 'email', required: true },
+                { section: '기본정보', id: 'phone', label: '휴대전화', type: 'tel', required: true },
+                { section: '기본정보', id: 'landline', label: '유선전화', type: 'tel', required: false },
+                ...BASE_SCHEMA
+            ],
+            '중고교': [
+                { section: '기본정보', id: 'schoolName', label: '학교명', type: 'text', required: true },
+                { section: '기본정보', id: 'name', label: '지도교사명', type: 'text', required: true },
+                { section: '기본정보', id: 'email', label: '이메일', type: 'email', required: true },
+                { section: '기본정보', id: 'phone', label: '휴대전화', type: 'tel', required: true },
+                { section: '기본정보', id: 'landline', label: '유선전화', type: 'tel', required: false },
+                ...BASE_SCHEMA
+            ],
+            '공방': [
+                { section: '기본정보', id: 'companyName', label: '기업명', type: 'text', required: true },
+                { section: '기본정보', id: 'name', label: '이름', type: 'text', required: true },
+                { section: '기본정보', id: 'email', label: '이메일', type: 'email', required: true },
+                { section: '기본정보', id: 'phone', label: '휴대전화', type: 'tel', required: true },
+                { section: '기본정보', id: 'landline', label: '유선전화', type: 'tel', required: false },
+                
+                { section: '메인작품', id: 'mainProjectName', label: '제품명', type: 'text', required: true },
+                { section: '메인작품', id: 'mainProjectSpecs', label: '제품사양', type: 'text', required: true },
+                { section: '메인작품', id: 'mainProjectCategory', label: '분야', type: 'text', required: true },
+                { section: '메인작품', id: 'mainProjectMotivation', label: '개발동기', type: 'textarea', required: true },
+                { section: '메인작품', id: 'mainProjectDesc', label: '작품설명', type: 'textarea', required: true },
+                
+                { section: '추가작품(선택)', id: 'subProjectName', label: '추가 작품명', type: 'text', required: false },
+                { section: '추가작품(선택)', id: 'subProjectSpecs', label: '추가 작품사양', type: 'text', required: false },
+                { section: '추가작품(선택)', id: 'subProjectCategory', label: '추가 분야', type: 'text', required: false },
+                { section: '추가작품(선택)', id: 'subProjectDesc', label: '추가 작품설명', type: 'textarea', required: false },
+                
+                { section: '판매제품', id: 'saleProductName', label: '판매 제품명', type: 'text', required: true },
+                { section: '판매제품', id: 'saleProductPriceOut', label: '외부판매가격(원)', type: 'number', required: true },
+                { section: '판매제품', id: 'saleProductPriceHello', label: '헬로메이커판매가격(원)', type: 'number', required: true },
+                
+                { section: '운영 관련 사항', id: 'opLocation', label: '운영희망장소', type: 'select', options: ['선택하세요', '실내(김진재홀)', '실내(로비공간)', '야외'], required: true },
+                { section: '운영 관련 사항', id: 'tableCount', label: '테이블 수량(개)', type: 'number', required: true },
+                { section: '운영 관련 사항', id: 'chairCount', label: '의자 수량(개)', type: 'number', required: true },
+                { section: '운영 관련 사항', id: 'electricity', label: '전기 사용여부', type: 'select', options: ['선택하세요', '희망하지 않음', '희망'], required: true },
+                { section: '운영 관련 사항', id: 'electricityCapacity', label: '전기 희망 용량(W)', type: 'text', required: true, showIf: { field: 'electricity', value: '희망' } },
+                { section: '운영 관련 사항', id: 'boothOpType', label: '부스 운영방법', type: 'select', options: ['선택하세요', '체험없이 판매', '무료체험 및 판매', '유료체험 및 판매'], required: true },
+                
+                { section: '지원사항(선택)', id: 'lunchCount', label: '중식인원(명)', type: 'number', required: false },
+                { section: '지원사항(선택)', id: 'tshirtBuy', label: '티셔츠 구매희망여부', type: 'select', options: ['선택하세요', 'N', 'Y'], required: false },
+                { section: '지원사항(선택)', id: 'tshirtCount', label: '티셔츠 구매 희망 수량(장)', type: 'number', required: false, showIf: { field: 'tshirtBuy', value: 'Y' } }
+            ]
+        };
+
+        // --- State ---
+        let registrations = [];
+        let customFields = [];
+        let currentCategory = '';
+        
+        // Default visible columns in dashboard (basic ones)
+        let visibleColumns = new Set(['category', 'name', 'phone', 'mainProjectName', 'opLocation']);
+
+        function getAllUniqueFields() {
+            const map = new Map();
+            Object.values(SCHEMAS).forEach(schema => {
+                schema.forEach(field => {
+                    if (!map.has(field.id)) {
+                        map.set(field.id, { id: field.id, label: field.label, type: field.type });
+                    }
+                });
+            });
+            customFields.forEach(field => {
+                if (!map.has(field.id)) map.set(field.id, field);
+            });
+            return Array.from(map.values());
+        }
+
+        // --- DOM Elements ---
+        const navRegister = document.getElementById('nav-register');
+        const navDashboard = document.getElementById('nav-dashboard');
+        const secRegister = document.getElementById('sec-register');
+        const secDashboard = document.getElementById('sec-dashboard');
+        const catBtns = document.querySelectorAll('.cat-btn');
+        const regForm = document.getElementById('registration-form');
+        const categoryInput = document.getElementById('maker-category');
+        const dynamicFieldsContainer = document.getElementById('dynamic-fields-container');
+        const btnAddField = document.getElementById('btn-add-field');
+        const addFieldModal = document.getElementById('add-field-modal');
+        const btnConfirmAddField = document.getElementById('btn-confirm-add-field');
+        const btnCancelAddField = document.getElementById('btn-cancel-add-field');
+        const tableHeadRow = document.getElementById('table-head-row');
+        const tableBody = document.getElementById('table-body');
+        const statsContainer = document.getElementById('stats-container');
+        const columnToggles = document.getElementById('column-toggles');
+
+        // --- Initialization ---
+        async function init() {
+            customFields = await getCustomFields();
+            customFields.forEach(f => visibleColumns.add(f.id));
+        }
+
+        // --- Navigation ---
+        navRegister.addEventListener('click', () => {
+            navRegister.classList.add('active');
+            navDashboard.classList.remove('active');
+            secRegister.classList.remove('hidden');
+            secDashboard.classList.add('hidden');
+        });
+
+        navDashboard.addEventListener('click', async () => {
+            navDashboard.classList.add('active');
+            navRegister.classList.remove('active');
+            secDashboard.classList.remove('hidden');
+            secRegister.classList.add('hidden');
+            await refreshDashboard();
+        });
+
+        // --- Category Selection ---
+        catBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                catBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                currentCategory = btn.dataset.type;
+                categoryInput.value = currentCategory;
+                
+                renderFormFields(currentCategory);
+                regForm.classList.remove('hidden');
+                
+                regForm.style.animation = 'none';
+                setTimeout(() => regForm.style.animation = 'fadeIn 0.5s ease forwards', 10);
+            });
+        });
+
+        // --- Dynamic Form Rendering ---
+        function renderFormFields(category) {
+            dynamicFieldsContainer.innerHTML = '';
+            const schema = SCHEMAS[category] || [];
+            const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === category);
+            const allFieldsForCategory = [...schema, ...filteredCustomFields];
+
+            let currentSection = '';
+
+            allFieldsForCategory.forEach(field => {
+                if (field.section && field.section !== currentSection) {
+                    const secHeader = document.createElement('div');
+                    secHeader.classList.add('form-section-header');
+                    secHeader.textContent = field.section;
+                    dynamicFieldsContainer.appendChild(secHeader);
+                    currentSection = field.section;
+                }
+
+                const group = document.createElement('div');
+                group.classList.add('input-group');
+                group.dataset.fieldId = field.id;
+                
+                if (field.showIf) {
+                    group.classList.add('hidden');
+                }
+
+                const label = document.createElement('label');
+                label.htmlFor = `input-${field.id}`;
+                label.textContent = field.label + (field.required ? ' *' : '');
+                
+                let input;
+                if (field.type === 'select') {
+                    input = document.createElement('select');
+                    field.options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt === '선택하세요' ? '' : opt;
+                        option.textContent = opt;
+                        input.appendChild(option);
+                    });
+                } else if (field.type === 'textarea') {
+                    input = document.createElement('textarea');
+                } else {
+                    input = document.createElement('input');
+                    input.type = field.type;
+                    if(field.type === 'number') input.min = 0;
+                }
+                
+                input.id = `input-${field.id}`;
+                input.name = field.id;
+                
+                if (field.required && !field.showIf) input.required = true;
+                
+                // Add listener to all inputs to evaluate conditional logic
+                input.addEventListener('change', () => evaluateConditions(allFieldsForCategory));
+                input.addEventListener('input', () => evaluateConditions(allFieldsForCategory));
+
+                group.appendChild(label);
+                group.appendChild(input);
+                dynamicFieldsContainer.appendChild(group);
+            });
+            
+            // initial check for conditionals
+            evaluateConditions(allFieldsForCategory);
+        }
+
+        function evaluateConditions(schema) {
+            schema.forEach(field => {
+                if (field.showIf) {
+                    const dependencyInput = document.getElementById(`input-${field.showIf.field}`);
+                    const targetGroup = document.querySelector(`.input-group[data-field-id="${field.id}"]`);
+                    const targetInput = document.getElementById(`input-${field.id}`);
+                    
+                    if (dependencyInput && targetGroup) {
+                        if (dependencyInput.value === field.showIf.value) {
+                            targetGroup.classList.remove('hidden');
+                            if (field.required) targetInput.required = true;
+                        } else {
+                            targetGroup.classList.add('hidden');
+                            targetInput.required = false;
+                            targetInput.value = ''; // clear value
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Form Submission ---
+        regForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(regForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            const schema = SCHEMAS[data.category] || [];
+            const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === data.category);
+            const allFieldsForCategory = [...schema, ...filteredCustomFields];
+
+            allFieldsForCategory.forEach(f => {
+                if(f.type === 'number' && data[f.id]) {
+                    data[f.id] = parseInt(data[f.id], 10);
+                }
+            });
+
+            data.timestamp = Date.now();
+            const submitBtn = regForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '처리 중...';
+            submitBtn.disabled = true;
+
+            try {
+                await addRegistration(data);
+                alert('성공적으로 등록되었습니다!');
+                regForm.reset();
+                catBtns.forEach(b => b.classList.remove('selected'));
+                regForm.classList.add('hidden');
+                currentCategory = '';
+            } catch (err) {
+                alert('등록 중 오류가 발생했습니다.');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- Dashboard ---
+        async function refreshDashboard() {
+            registrations = await getRegistrations();
+            renderColumnToggles();
+            renderStats();
+            renderTable();
+        }
+
+        function renderColumnToggles() {
+            columnToggles.innerHTML = '';
+            const allFields = getAllUniqueFields();
+            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
+            
+            all.forEach(field => {
+                const label = document.createElement('label');
+                label.classList.add('checkbox-label');
+                if (visibleColumns.has(field.id)) label.classList.add('active-filter');
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = visibleColumns.has(field.id);
+                checkbox.dataset.id = field.id;
+                
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        visibleColumns.add(field.id);
+                        label.classList.add('active-filter');
+                    } else {
+                        visibleColumns.delete(field.id);
+                        label.classList.remove('active-filter');
+                    }
+                    renderTable();
+                });
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(' ' + field.label));
+                columnToggles.appendChild(label);
+            });
+        }
+
+        function renderStats() {
+            statsContainer.innerHTML = '';
+            const allFields = getAllUniqueFields();
+            const numberFields = allFields.filter(f => f.type === 'number');
+            
+            createStatCard('전체 등록 수', registrations.length + '팀');
+            
+            numberFields.forEach(field => {
+                const total = registrations.reduce((sum, reg) => sum + (Number(reg[field.id]) || 0), 0);
+                if(total > 0) { // Only show stat cards if total is > 0 to avoid clutter
+                    createStatCard(field.label, total);
+                }
+            });
+        }
+
+        function createStatCard(label, value) {
+            const card = document.createElement('div');
+            card.classList.add('stat-card');
+            card.innerHTML = `<div class="stat-value">${value}</div><div class="stat-label">${label}</div>`;
+            statsContainer.appendChild(card);
+        }
+
+        function renderTable() {
+            tableHeadRow.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            const allFields = getAllUniqueFields();
+            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
+            const activeFields = all.filter(f => visibleColumns.has(f.id));
+            
+            activeFields.forEach(f => {
+                const th = document.createElement('th');
+                th.textContent = f.label;
+                tableHeadRow.appendChild(th);
+            });
+            
+            registrations.forEach(reg => {
+                const tr = document.createElement('tr');
+                activeFields.forEach(f => {
+                    const td = document.createElement('td');
+                    td.textContent = reg[f.id] || '-';
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- Add Custom Field Modal ---
+        btnAddField.addEventListener('click', () => {
+            addFieldModal.classList.remove('hidden');
+        });
+
+        btnCancelAddField.addEventListener('click', () => {
+            addFieldModal.classList.add('hidden');
+            document.getElementById('new-field-id').value = '';
+            document.getElementById('new-field-name').value = '';
+            document.getElementById('new-field-category').value = '모든 구분';
+        });
+
+        btnConfirmAddField.addEventListener('click', async () => {
+            const targetCategory = document.getElementById('new-field-category').value;
+            const idInput = document.getElementById('new-field-id').value.trim();
+            const nameInput = document.getElementById('new-field-name').value.trim();
+            const typeInput = document.getElementById('new-field-type').value;
+            
+            if(!idInput || !nameInput) {
+                alert('식별자와 항목 이름을 모두 입력해주세요.');
+                return;
+            }
+            
+            const newField = { targetCategory: targetCategory, section: '추가 항목', id: idInput, label: nameInput, type: typeInput, required: false };
+            customFields.push(newField);
+            await saveCustomFields(customFields);
+            
+            visibleColumns.add(idInput);
+            if (currentCategory) {
+                renderFormFields(currentCategory);
+            }
+            
+            if (!secDashboard.classList.contains('hidden')) {
+                await refreshDashboard();
+            }
+            btnCancelAddField.click();
+        });
+
+        // --- Excel Export ---
+        const btnExportExcel = document.getElementById('btn-export-excel');
+        btnExportExcel.addEventListener('click', () => {
+            if (registrations.length === 0) {
+                alert('다운로드할 데이터가 없습니다.');
+                return;
+            }
+            
+            const allFields = getAllUniqueFields();
+            const headers = ['메이커 구분', ...allFields.map(f => f.label)];
+            const keys = ['category', ...allFields.map(f => f.id)];
+            
+            const dataToExport = registrations.map(reg => {
+                const row = {};
+                keys.forEach((key, index) => {
+                    row[headers[index]] = reg[key] || '';
+                });
+                return row;
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "신청자목록");
+            XLSX.writeFile(wb, "hellomaker_registrations.xlsx");
+        });
+
+        init();
+    </script>
+</body>
+</html>
