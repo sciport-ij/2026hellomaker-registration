@@ -449,6 +449,9 @@ th, td {
     text-align: left;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
 }
 
 th {
@@ -458,6 +461,13 @@ th {
     position: sticky;
     top: 0;
     z-index: 10;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+th:hover {
+    background: rgba(226, 232, 240, 0.95);
 }
 
 tr:hover td {
@@ -468,6 +478,10 @@ td {
     color: var(--text-main);
 }
 
+tbody tr {
+    cursor: pointer;
+}
+
 /* Modal */
 .modal {
     position: fixed;
@@ -475,7 +489,9 @@ td {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 500px;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(0,0,0,0.1);

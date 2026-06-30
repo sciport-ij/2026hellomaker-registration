@@ -74,19 +74,20 @@
                         <option value="중고교">중고교</option>
                     </select>
                 </div>
-                <div class="input-group">
-                    <label>항목 식별자 (영어, 예: extraReq)</label>
-                    <input type="text" id="new-field-id" placeholder="영문 식별자 입력">
+                <div class="input-group" style="margin-top: 1rem;">
+                    <label>항목 ID (영문/숫자, 공백불가)</label>
+                    <input type="text" id="new-field-id" placeholder="예: tshirtSize">
                 </div>
-                <div class="input-group">
-                    <label>표시 이름 (예: 추가 요구 사항, 전기 사용량)</label>
-                    <input type="text" id="new-field-name" placeholder="항목 이름 입력">
+                <div class="input-group" style="margin-top: 1rem;">
+                    <label>항목 이름 (화면 표시)</label>
+                    <input type="text" id="new-field-name" placeholder="예: 티셔츠 사이즈">
                 </div>
-                <div class="input-group">
-                    <label>항목 타입</label>
+                <div class="input-group" style="margin-top: 1rem; margin-bottom: 2rem;">
+                    <label>항목 유형</label>
                     <select id="new-field-type">
-                        <option value="text">텍스트 (일반)</option>
-                        <option value="number">숫자 (합산 가능)</option>
+                        <option value="text">짧은 텍스트</option>
+                        <option value="number">숫자</option>
+                        <option value="textarea">긴 텍스트 (여러 줄)</option>
                     </select>
                 </div>
                 <div class="modal-actions">
@@ -102,15 +103,26 @@
 
             <!-- Field Visibility Selector -->
             <div class="field-selector glass-card">
-                <div style="margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border);">
-                    <strong style="margin-right: 1rem; color: var(--text-main);">조회할 메이커 구분:</strong>
-                    <select id="dashboard-category-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 200px;">
-                        <option value="전체">모든 메이커 (전체)</option>
-                        <option value="개인">개인</option>
-                        <option value="전문(단체)">전문(단체)</option>
-                        <option value="중고교">중고교</option>
-                        <option value="공방">공방</option>
-                    </select>
+                <div style="margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.5); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <strong style="margin-right: 1rem; color: var(--text-main);">조회할 메이커 구분:</strong>
+                        <select id="dashboard-category-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 200px;">
+                            <option value="전체">모든 메이커 (전체)</option>
+                            <option value="개인">개인</option>
+                            <option value="전문(단체)">전문(단체)</option>
+                            <option value="중고교">중고교</option>
+                            <option value="공방">공방</option>
+                        </select>
+                    </div>
+                    <div>
+                        <strong style="margin-right: 1rem; color: var(--text-main);">선정 상태 필터:</strong>
+                        <select id="dashboard-status-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 150px;">
+                            <option value="전체">상태 무관 (전체)</option>
+                            <option value="선정">선정</option>
+                            <option value="미선정">미선정</option>
+                            <option value="미정">미정</option>
+                        </select>
+                    </div>
                 </div>
                 <h4>표시할 데이터 선택</h4>
                 <div id="column-toggles" class="checkbox-group">
@@ -137,7 +149,7 @@
     <!-- App Logic & Firebase SDK (Inlined to prevent CORS issues on file:/// access) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // TODO: Replace this with your actual Firebase project configuration
         const firebaseConfig = {
@@ -189,6 +201,31 @@
                 return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             } else {
                 return JSON.parse(localStorage.getItem('registrations') || '[]');
+            }
+        }
+
+        async function updateRegistration(id, data) {
+            if (isFirebaseInitialized) {
+                const docRef = doc(db, "registrations", id);
+                await updateDoc(docRef, data);
+            } else {
+                const regs = JSON.parse(localStorage.getItem('registrations') || '[]');
+                const index = regs.findIndex(r => r.id === id);
+                if (index > -1) {
+                    regs[index] = { ...regs[index], ...data };
+                    localStorage.setItem('registrations', JSON.stringify(regs));
+                }
+            }
+        }
+
+        async function deleteRegistration(id) {
+            if (isFirebaseInitialized) {
+                const docRef = doc(db, "registrations", id);
+                await deleteDoc(docRef);
+            } else {
+                let regs = JSON.parse(localStorage.getItem('registrations') || '[]');
+                regs = regs.filter(r => r.id !== id);
+                localStorage.setItem('registrations', JSON.stringify(regs));
             }
         }
 
@@ -559,6 +596,7 @@
             });
 
             data.timestamp = Date.now();
+            data.status = '미정';
             const submitBtn = regForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
             submitBtn.textContent = '처리 중...';
@@ -580,17 +618,29 @@
         });
 
         // --- Dashboard ---
+        let currentSortColumn = 'timestamp';
+        let currentSortDirection = 'desc';
+
         async function refreshDashboard() {
             registrations = await getRegistrations();
             
-            const filterSelect = document.getElementById('dashboard-category-filter');
-            if (filterSelect && !filterSelect.hasAttribute('data-bound')) {
-                filterSelect.addEventListener('change', () => {
+            const categoryFilterSelect = document.getElementById('dashboard-category-filter');
+            if (categoryFilterSelect && !categoryFilterSelect.hasAttribute('data-bound')) {
+                categoryFilterSelect.addEventListener('change', () => {
                     renderColumnToggles();
                     renderStats();
                     renderTable();
                 });
-                filterSelect.setAttribute('data-bound', 'true');
+                categoryFilterSelect.setAttribute('data-bound', 'true');
+            }
+            
+            const statusFilterSelect = document.getElementById('dashboard-status-filter');
+            if (statusFilterSelect && !statusFilterSelect.hasAttribute('data-bound')) {
+                statusFilterSelect.addEventListener('change', () => {
+                    renderStats();
+                    renderTable();
+                });
+                statusFilterSelect.setAttribute('data-bound', 'true');
             }
 
             renderColumnToggles();
@@ -663,12 +713,16 @@
         function renderStats() {
             statsContainer.innerHTML = '';
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
             const numberFields = allFields.filter(f => f.type === 'number');
             
             let displayRegs = registrations;
             if (categoryFilter !== '전체') {
                 displayRegs = displayRegs.filter(r => r.category === categoryFilter);
+            }
+            if (statusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
             }
             
             createStatCard('전체 등록 수', displayRegs.length + '팀');
@@ -693,13 +747,27 @@
             tableBody.innerHTML = '';
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
-            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
-            const activeFields = all.filter(f => visibleColumns.has(f.id));
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'status', label: '선정 상태'}, ...allFields];
+            const activeFields = all.filter(f => f.id === 'status' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
                 const th = document.createElement('th');
-                th.textContent = f.label;
+                let indicator = '';
+                if (currentSortColumn === f.id) {
+                    indicator = currentSortDirection === 'asc' ? ' ▲' : ' ▼';
+                }
+                th.textContent = f.label + indicator;
+                th.addEventListener('click', () => {
+                    if (currentSortColumn === f.id) {
+                        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortColumn = f.id;
+                        currentSortDirection = 'asc';
+                    }
+                    renderTable();
+                });
                 tableHeadRow.appendChild(th);
             });
             
@@ -707,17 +775,140 @@
             if (categoryFilter !== '전체') {
                 displayRegs = displayRegs.filter(r => r.category === categoryFilter);
             }
+            if (statusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
+            }
+            
+            displayRegs.sort((a, b) => {
+                let valA = a[currentSortColumn] || '';
+                let valB = b[currentSortColumn] || '';
+                if (currentSortColumn === 'status') {
+                    valA = a.status || '미정';
+                    valB = b.status || '미정';
+                }
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
             
             displayRegs.forEach(reg => {
                 const tr = document.createElement('tr');
+                tr.addEventListener('click', () => openEditModal(reg));
                 activeFields.forEach(f => {
                     const td = document.createElement('td');
-                    td.textContent = reg[f.id] || '-';
+                    let content = reg[f.id] || '-';
+                    if (f.id === 'status') {
+                        content = reg.status || '미정';
+                    }
+                    td.textContent = content;
+                    td.title = content; // for tooltip
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
             });
         }
+
+        // --- Edit Registration Modal ---
+        let currentEditingId = null;
+
+        function openEditModal(reg) {
+            currentEditingId = reg.id;
+            const modal = document.getElementById('edit-modal');
+            const container = document.getElementById('edit-fields-container');
+            const statusSelect = document.getElementById('edit-status-select');
+            
+            statusSelect.value = reg.status || '미정';
+            container.innerHTML = '';
+            
+            const schema = SCHEMAS[reg.category] || [];
+            const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
+            const allFields = [...schema, ...filteredCustomFields];
+            
+            allFields.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'input-group';
+                const label = document.createElement('label');
+                label.textContent = f.label;
+                div.appendChild(label);
+                
+                let input;
+                if (f.type === 'textarea') {
+                    input = document.createElement('textarea');
+                    input.rows = 3;
+                } else if (f.type === 'select') {
+                    input = document.createElement('select');
+                    if (f.options) {
+                        f.options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            option.textContent = opt;
+                            input.appendChild(option);
+                        });
+                    }
+                } else {
+                    input = document.createElement('input');
+                    input.type = f.type || 'text';
+                }
+                input.id = `edit-field-${f.id}`;
+                input.value = reg[f.id] || '';
+                div.appendChild(input);
+                container.appendChild(div);
+            });
+            
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+            document.getElementById('edit-modal').classList.add('hidden');
+        });
+
+        document.getElementById('btn-delete-registration').addEventListener('click', async () => {
+            if (confirm('정말로 이 데이터를 삭제하시겠습니까?')) {
+                await deleteRegistration(currentEditingId);
+                document.getElementById('edit-modal').classList.add('hidden');
+                await refreshDashboard();
+            }
+        });
+
+        document.getElementById('btn-save-edit').addEventListener('click', async () => {
+            const status = document.getElementById('edit-status-select').value;
+            const reg = registrations.find(r => r.id === currentEditingId);
+            if (!reg) return;
+            
+            const updatedData = { status };
+            
+            const schema = SCHEMAS[reg.category] || [];
+            const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
+            const allFields = [...schema, ...filteredCustomFields];
+            
+            allFields.forEach(f => {
+                const input = document.getElementById(`edit-field-${f.id}`);
+                if (input) {
+                    let val = input.value;
+                    if (f.type === 'number' && val) val = parseInt(val, 10);
+                    updatedData[f.id] = val;
+                }
+            });
+            
+            const saveBtn = document.getElementById('btn-save-edit');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '저장 중...';
+            saveBtn.disabled = true;
+            
+            try {
+                await updateRegistration(currentEditingId, updatedData);
+                document.getElementById('edit-modal').classList.add('hidden');
+                await refreshDashboard();
+            } catch (error) {
+                console.error(error);
+                alert('수정에 실패했습니다.');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        });
 
         // --- Add Custom Field Modal ---
         btnAddField.addEventListener('click', () => {
@@ -766,21 +957,29 @@
             }
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
             
             let displayRegs = registrations;
             if (categoryFilter !== '전체') {
                 displayRegs = displayRegs.filter(r => r.category === categoryFilter);
             }
+            if (statusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
+            }
 
             const activeFields = allFields.filter(f => visibleColumns.has(f.id));
-            const headers = ['메이커 구분', ...activeFields.map(f => f.label)];
-            const keys = ['category', ...activeFields.map(f => f.id)];
+            const headers = ['메이커 구분', '선정 상태', ...activeFields.map(f => f.label)];
+            const keys = ['category', 'status', ...activeFields.map(f => f.id)];
             
             const dataToExport = displayRegs.map(reg => {
                 const row = {};
                 keys.forEach((key, index) => {
-                    row[headers[index]] = reg[key] || '';
+                    if (key === 'status') {
+                        row[headers[index]] = reg[key] || '미정';
+                    } else {
+                        row[headers[index]] = reg[key] || '';
+                    }
                 });
                 return row;
             });
