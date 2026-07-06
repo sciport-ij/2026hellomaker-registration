@@ -20,8 +20,7 @@
     <!-- Auth Screen -->
     <div id="auth-screen" style="position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
         <div class="glass-card" style="text-align: center; max-width: 400px; width: 90%;">
-            <h2 style="margin-bottom: 1rem; color: var(--primary);">접근 인증</h2>
-            <p style="margin-bottom: 2rem; color: var(--text-muted);">개인정보 및 데이터 관리를 위해 비밀번호를 입력해주세요.</p>
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary);">접근 인증</h2>
             <div class="input-group">
                 <input type="password" id="auth-password" placeholder="비밀번호 입력" style="text-align: center; font-size: 1.1rem; padding: 0.75rem;">
             </div>
@@ -1013,14 +1012,23 @@
         const btnAuthSubmit = document.getElementById('btn-auth-submit');
         const authError = document.getElementById('auth-error');
 
-        if (sessionStorage.getItem('isAuthenticated') === 'true') {
+        let isAuthenticated = false;
+        try {
+            isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
+        } catch (e) {
+            console.warn("sessionStorage not available", e);
+        }
+
+        if (isAuthenticated) {
             authScreen.style.display = 'none';
             appContent.style.display = 'block';
         }
 
         btnAuthSubmit.addEventListener('click', () => {
-            if (authPasswordInput.value === 'sciport1!') {
-                sessionStorage.setItem('isAuthenticated', 'true');
+            if (authPasswordInput.value.trim() === 'sciport1!') {
+                try {
+                    sessionStorage.setItem('isAuthenticated', 'true');
+                } catch (e) {}
                 authScreen.style.display = 'none';
                 appContent.style.display = 'block';
             } else {
