@@ -927,8 +927,7 @@
             card.style.position = 'relative';
             
             if (detailData) {
-                card.style.cursor = 'pointer';
-                card.title = '자세한 내용을 보려면 클릭해 주세요';
+                card.style.cursor = 'default';
                 
                 const popover = document.createElement('div');
                 popover.classList.add('stat-popover', 'hidden');
@@ -944,22 +943,14 @@
                 }
                 popover.innerHTML = popoverHtml;
                 
-                card.addEventListener('click', (e) => {
-                    document.querySelectorAll('.stat-popover').forEach(p => {
-                        if (p !== popover) {
-                            p.classList.add('hidden');
-                            p.parentNode.style.zIndex = '1';
-                        }
-                    });
-                    
-                    if (popover.classList.contains('hidden')) {
-                        popover.classList.remove('hidden');
-                        card.style.zIndex = '100';
-                    } else {
-                        popover.classList.add('hidden');
-                        card.style.zIndex = '1';
-                    }
-                    e.stopPropagation();
+                card.addEventListener('mouseenter', () => {
+                    popover.classList.remove('hidden');
+                    card.style.zIndex = '100';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    popover.classList.add('hidden');
+                    card.style.zIndex = '1';
                 });
                 
                 // Prevent clicks inside popover from bubbling up to the document and closing it
