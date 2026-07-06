@@ -152,6 +152,27 @@
                 </div>
             </div>
 
+            <!-- Edit Registration Modal -->
+            <div id="edit-modal" class="hidden glass-card modal" style="max-height: 80vh; overflow-y: auto;">
+                <h3>데이터 수정 및 관리</h3>
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label>선정 상태</label>
+                    <select id="edit-status-select" style="padding: 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.5); font-size: 1rem;">
+                        <option value="미정">미정</option>
+                        <option value="선정">선정</option>
+                        <option value="미선정">미선정</option>
+                    </select>
+                </div>
+                <div id="edit-fields-container" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                    <!-- Dynamically populated fields will appear here -->
+                </div>
+                <div class="modal-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button id="btn-delete-registration" class="btn-secondary" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444; margin-right: auto;">데이터 삭제</button>
+                    <button id="btn-cancel-edit" class="btn-text">취소</button>
+                    <button id="btn-save-edit" class="btn-primary">변경사항 저장</button>
+                </div>
+            </div>
+
             <!-- Stats Overview -->
             <div class="stats-overview" id="stats-container">
                 <!-- Calculated totals will appear here -->
