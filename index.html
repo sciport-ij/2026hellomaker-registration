@@ -29,6 +29,48 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var authScreen = document.getElementById('auth-screen');
+            var appContent = document.getElementById('app-content');
+            var authPasswordInput = document.getElementById('auth-password');
+            var btnAuthSubmit = document.getElementById('btn-auth-submit');
+            var authError = document.getElementById('auth-error');
+
+            var isAuthenticated = false;
+            try {
+                isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
+            } catch (e) {
+                console.warn("sessionStorage not available", e);
+            }
+
+            if (isAuthenticated) {
+                authScreen.style.display = 'none';
+                appContent.style.display = 'block';
+            }
+
+            btnAuthSubmit.addEventListener('click', function() {
+                if (authPasswordInput.value.trim() === 'sciport1!') {
+                    try {
+                        sessionStorage.setItem('isAuthenticated', 'true');
+                    } catch (e) {}
+                    authScreen.style.display = 'none';
+                    appContent.style.display = 'block';
+                } else {
+                    authError.style.display = 'block';
+                    authPasswordInput.value = '';
+                    authPasswordInput.focus();
+                }
+            });
+
+            authPasswordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    btnAuthSubmit.click();
+                }
+            });
+        });
+    </script>
+
     <!-- Main App Content (Hidden by default) -->
     <div id="app-content" style="display: none;">
         <header class="glass-header">
@@ -1005,45 +1047,7 @@
             XLSX.writeFile(wb, "hellomaker_registrations.xlsx");
         });
 
-        // --- Authentication Logic ---
-        const authScreen = document.getElementById('auth-screen');
-        const appContent = document.getElementById('app-content');
-        const authPasswordInput = document.getElementById('auth-password');
-        const btnAuthSubmit = document.getElementById('btn-auth-submit');
-        const authError = document.getElementById('auth-error');
-
-        let isAuthenticated = false;
-        try {
-            isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
-        } catch (e) {
-            console.warn("sessionStorage not available", e);
-        }
-
-        if (isAuthenticated) {
-            authScreen.style.display = 'none';
-            appContent.style.display = 'block';
-        }
-
-        btnAuthSubmit.addEventListener('click', () => {
-            if (authPasswordInput.value.trim() === 'sciport1!') {
-                try {
-                    sessionStorage.setItem('isAuthenticated', 'true');
-                } catch (e) {}
-                authScreen.style.display = 'none';
-                appContent.style.display = 'block';
-            } else {
-                authError.style.display = 'block';
-                authPasswordInput.value = '';
-                authPasswordInput.focus();
-            }
-        });
-
-        authPasswordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                btnAuthSubmit.click();
-            }
-        });
-
+        // --- Initialization ---
         init();
     </script>
 </body>
