@@ -239,10 +239,17 @@
             console.error("Firebase initialization error:", error);
         }
 
+        function withTimeout(promise, ms = 8000) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error("네트워크 응답 시간 초과 (서버 연결 실패)")), ms))
+            ]);
+        }
+
         async function addRegistration(data) {
             if (isFirebaseInitialized) {
                 try {
-                    const docRef = await addDoc(collection(db, "registrations"), data);
+                    const docRef = await withTimeout(addDoc(collection(db, "registrations"), data));
                     return docRef.id;
                 } catch (e) {
                     console.error("Error adding document: ", e);
@@ -259,8 +266,13 @@
 
         async function getRegistrations() {
             if (isFirebaseInitialized) {
-                const querySnapshot = await getDocs(collection(db, "registrations"));
-                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                try {
+                    const querySnapshot = await withTimeout(getDocs(collection(db, "registrations")));
+                    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                } catch (e) {
+                    console.error("Error getting docs: ", e);
+                    throw e;
+                }
             } else {
                 return JSON.parse(localStorage.getItem('registrations') || '[]');
             }
@@ -268,8 +280,13 @@
 
         async function updateRegistration(id, data) {
             if (isFirebaseInitialized) {
-                const docRef = doc(db, "registrations", id);
-                await updateDoc(docRef, data);
+                try {
+                    const docRef = doc(db, "registrations", id);
+                    await withTimeout(updateDoc(docRef, data));
+                } catch (e) {
+                    console.error("Error updating doc: ", e);
+                    throw e;
+                }
             } else {
                 const regs = JSON.parse(localStorage.getItem('registrations') || '[]');
                 const index = regs.findIndex(r => r.id === id);
@@ -282,8 +299,13 @@
 
         async function deleteRegistration(id) {
             if (isFirebaseInitialized) {
-                const docRef = doc(db, "registrations", id);
-                await deleteDoc(docRef);
+                try {
+                    const docRef = doc(db, "registrations", id);
+                    await withTimeout(deleteDoc(docRef));
+                } catch (e) {
+                    console.error("Error deleting doc: ", e);
+                    throw e;
+                }
             } else {
                 let regs = JSON.parse(localStorage.getItem('registrations') || '[]');
                 regs = regs.filter(r => r.id !== id);
@@ -684,7 +706,8 @@
                 regForm.classList.add('hidden');
                 currentCategory = '';
             } catch (err) {
-                alert('등록 중 오류가 발생했습니다.');
+                console.error(err);
+                alert('등록 중 오류가 발생했습니다: ' + (err.message || '알 수 없는 오류'));
             } finally {
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
