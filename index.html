@@ -352,6 +352,7 @@
             { section: '지원사항(선택)', id: 'breakfastCount', label: '조식인원(명)', type: 'number', required: false, rowGroup: 'extra' },
             { section: '지원사항(선택)', id: 'networkPartyCount', label: '네트워크 파티 인원(명)', type: 'number', required: false, rowGroup: 'extra' },
             { section: '지원사항(선택)', id: 'starGazingCount', label: '야간천체관측 인원(명)', type: 'number', required: false, rowGroup: 'extra' },
+            { section: '지원사항(선택)', id: 'greemerCast', label: '그리머섭외', type: 'checkbox', required: false },
             
             { section: '기타사항(선택)', id: 'etcComment', label: '기타사항', type: 'textarea', required: false }
         ];
@@ -417,7 +418,8 @@
                 
                 { section: '지원사항(선택)', id: 'lunchCount', label: '중식인원(명)', type: 'number', required: false },
                 { section: '지원사항(선택)', id: 'tshirtBuy', label: '티셔츠 구매희망여부', type: 'select', options: ['선택하세요', 'N', 'Y'], required: false },
-                { section: '지원사항(선택)', id: 'tshirtCount', label: '티셔츠 구매 희망 수량(장)', type: 'number', required: false, showIf: { field: 'tshirtBuy', value: 'Y' } }
+                { section: '지원사항(선택)', id: 'tshirtCount', label: '티셔츠 구매 희망 수량(장)', type: 'number', required: false, showIf: { field: 'tshirtBuy', value: 'Y' } },
+                { section: '지원사항(선택)', id: 'greemerCast', label: '그리머섭외', type: 'checkbox', required: false }
             ]
         };
 
@@ -556,6 +558,12 @@
                     });
                 } else if (field.type === 'textarea') {
                     input = document.createElement('textarea');
+                } else if (field.type === 'checkbox') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.value = 'Y';
+                    group.style.flexDirection = 'row';
+                    group.style.alignItems = 'center';
                 } else {
                     input = document.createElement('input');
                     input.type = field.type;
@@ -647,7 +655,9 @@
             const allFieldsForCategory = [...schema, ...filteredCustomFields];
 
             allFieldsForCategory.forEach(f => {
-                if(f.type === 'number' && data[f.id]) {
+                if (f.type === 'checkbox') {
+                    data[f.id] = formData.has(f.id) ? 'Y' : 'N';
+                } else if (f.type === 'number' && data[f.id]) {
                     data[f.id] = parseInt(data[f.id], 10);
                 }
             });
@@ -904,12 +914,20 @@
                             input.appendChild(option);
                         });
                     }
+                } else if (f.type === 'checkbox') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = reg[f.id] === 'Y';
+                    div.style.flexDirection = 'row';
+                    div.style.alignItems = 'center';
                 } else {
                     input = document.createElement('input');
                     input.type = f.type || 'text';
                 }
                 input.id = `edit-field-${f.id}`;
-                input.value = reg[f.id] || '';
+                if (f.type !== 'checkbox') {
+                    input.value = reg[f.id] || '';
+                }
                 div.appendChild(input);
                 container.appendChild(div);
             });
@@ -944,7 +962,11 @@
                 const input = document.getElementById(`edit-field-${f.id}`);
                 if (input) {
                     let val = input.value;
-                    if (f.type === 'number' && val) val = parseInt(val, 10);
+                    if (f.type === 'checkbox') {
+                        val = input.checked ? 'Y' : 'N';
+                    } else if (f.type === 'number' && val) {
+                        val = parseInt(val, 10);
+                    }
                     updatedData[f.id] = val;
                 }
             });
