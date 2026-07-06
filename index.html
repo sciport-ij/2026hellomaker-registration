@@ -17,15 +17,30 @@
         <div class="shape shape-3"></div>
     </div>
 
-    <header class="glass-header">
-        <div class="logo">국립부산과학관 <span>2026 헬로메이커</span> 메이커 취합</div>
-        <nav>
-            <button id="nav-register" class="nav-btn active">신청하기</button>
-            <button id="nav-dashboard" class="nav-btn">데이터 확인</button>
-        </nav>
-    </header>
+    <!-- Auth Screen -->
+    <div id="auth-screen" style="position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
+        <div class="glass-card" style="text-align: center; max-width: 400px; width: 90%;">
+            <h2 style="margin-bottom: 1rem; color: var(--primary);">접근 인증</h2>
+            <p style="margin-bottom: 2rem; color: var(--text-muted);">개인정보 및 데이터 관리를 위해 비밀번호를 입력해주세요.</p>
+            <div class="input-group">
+                <input type="password" id="auth-password" placeholder="비밀번호 입력" style="text-align: center; font-size: 1.1rem; padding: 0.75rem;">
+            </div>
+            <button id="btn-auth-submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">접속하기</button>
+            <p id="auth-error" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem; display: none;">비밀번호가 일치하지 않습니다.</p>
+        </div>
+    </div>
 
-    <main class="container">
+    <!-- Main App Content (Hidden by default) -->
+    <div id="app-content" style="display: none;">
+        <header class="glass-header">
+            <div class="logo">국립부산과학관 <span>2026 헬로메이커</span> 메이커 취합</div>
+            <nav>
+                <button id="nav-register" class="nav-btn active">신청하기</button>
+                <button id="nav-dashboard" class="nav-btn">데이터 확인</button>
+            </nav>
+        </header>
+
+        <main class="container">
         <!-- Section: Registration -->
         <section id="sec-register" class="glass-panel active">
             <h2>참가자 정보 입력</h2>
@@ -145,6 +160,7 @@
             </div>
         </section>
     </main>
+    </div>
 
     <!-- App Logic & Firebase SDK (Inlined to prevent CORS issues on file:/// access) -->
     <script type="module">
@@ -988,6 +1004,36 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "신청자목록");
             XLSX.writeFile(wb, "hellomaker_registrations.xlsx");
+        });
+
+        // --- Authentication Logic ---
+        const authScreen = document.getElementById('auth-screen');
+        const appContent = document.getElementById('app-content');
+        const authPasswordInput = document.getElementById('auth-password');
+        const btnAuthSubmit = document.getElementById('btn-auth-submit');
+        const authError = document.getElementById('auth-error');
+
+        if (sessionStorage.getItem('isAuthenticated') === 'true') {
+            authScreen.style.display = 'none';
+            appContent.style.display = 'block';
+        }
+
+        btnAuthSubmit.addEventListener('click', () => {
+            if (authPasswordInput.value === 'sciport1!') {
+                sessionStorage.setItem('isAuthenticated', 'true');
+                authScreen.style.display = 'none';
+                appContent.style.display = 'block';
+            } else {
+                authError.style.display = 'block';
+                authPasswordInput.value = '';
+                authPasswordInput.focus();
+            }
+        });
+
+        authPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                btnAuthSubmit.click();
+            }
         });
 
         init();
