@@ -946,9 +946,19 @@
                 
                 card.addEventListener('click', (e) => {
                     document.querySelectorAll('.stat-popover').forEach(p => {
-                        if (p !== popover) p.classList.add('hidden');
+                        if (p !== popover) {
+                            p.classList.add('hidden');
+                            p.parentNode.style.zIndex = '1';
+                        }
                     });
-                    popover.classList.toggle('hidden');
+                    
+                    if (popover.classList.contains('hidden')) {
+                        popover.classList.remove('hidden');
+                        card.style.zIndex = '100';
+                    } else {
+                        popover.classList.add('hidden');
+                        card.style.zIndex = '1';
+                    }
                     e.stopPropagation();
                 });
                 
@@ -1225,7 +1235,10 @@
 
         // Global click to close popovers
         document.addEventListener('click', () => {
-            document.querySelectorAll('.stat-popover').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.stat-popover').forEach(p => {
+                p.classList.add('hidden');
+                p.parentNode.style.zIndex = '1';
+            });
         });
 
         // --- Add Custom Field Modal ---
