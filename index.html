@@ -173,6 +173,17 @@
                 </div>
             </div>
 
+            <!-- Stats Detail Modal -->
+            <div id="stats-detail-modal" class="hidden glass-card modal" style="max-height: 80vh; overflow-y: auto;">
+                <h3 id="stats-detail-title">상세 정보</h3>
+                <div id="stats-detail-content" style="margin-bottom: 2rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-actions" style="display: flex; justify-content: flex-end;">
+                    <button id="btn-close-stats-detail" class="btn-primary">닫기</button>
+                </div>
+            </div>
+
             <!-- Stats Overview -->
             <div class="stats-overview" id="stats-container">
                 <!-- Calculated totals will appear here -->
@@ -864,11 +875,23 @@
             }
             
             // 1. 전체 등록 수
-            createStatCard('전체 등록 수', displayRegs.length + '팀');
+            const totalBreakdown = {
+                '개인': displayRegs.filter(r => r.category === '개인').length,
+                '공방': displayRegs.filter(r => r.category === '공방').length,
+                '전문(단체)': displayRegs.filter(r => r.category === '전문(단체)').length,
+                '중고교': displayRegs.filter(r => r.category === '중고교').length
+            };
+            createStatCard('전체 등록 수', displayRegs.length + '팀', false, totalBreakdown);
             
             // 2. 그리머 섭외건
-            const greemerCount = displayRegs.filter(r => r.greemerCast === 'Y').length;
-            createStatCard('그리머 섭외건', formatNumber(greemerCount) + '건');
+            const greemerRegs = displayRegs.filter(r => r.greemerCast === 'Y');
+            const greemerBreakdown = {
+                '개인': greemerRegs.filter(r => r.category === '개인').length,
+                '공방': greemerRegs.filter(r => r.category === '공방').length,
+                '전문(단체)': greemerRegs.filter(r => r.category === '전문(단체)').length,
+                '중고교': greemerRegs.filter(r => r.category === '중고교').length
+            };
+            createStatCard('그리머 섭외건', formatNumber(greemerRegs.length) + '건', false, greemerBreakdown);
             
             // 3. 테이블 수량
             const tableCount = displayRegs.reduce((sum, r) => sum + (Number(r.tableCount) || 0), 0);
@@ -883,17 +906,17 @@
             createStatCard('중식인원(명)', formatNumber(lunchCount));
 
             // 6. 단체복 수량(전체합계)
-            const uniformSum = displayRegs.reduce((sum, r) => {
-                return sum + 
-                       (Number(r.uniformCount_XS) || 0) +
-                       (Number(r.uniformCount_S) || 0) +
-                       (Number(r.uniformCount_M) || 0) +
-                       (Number(r.uniformCount_L) || 0) +
-                       (Number(r.uniformCount_XL) || 0) +
-                       (Number(r.uniformCount_2XL) || 0) +
-                       (Number(r.uniformCount_3XL) || 0);
-            }, 0);
-            createStatCard('단체복 수량(전체)', formatNumber(uniformSum));
+            const uniformBreakdown = {
+                'XS': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_XS) || 0), 0),
+                'S': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_S) || 0), 0),
+                'M': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_M) || 0), 0),
+                'L': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_L) || 0), 0),
+                'XL': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_XL) || 0), 0),
+                '2XL': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_2XL) || 0), 0),
+                '3XL': displayRegs.reduce((sum, r) => sum + (Number(r.uniformCount_3XL) || 0), 0)
+            };
+            const uniformSum = Object.values(uniformBreakdown).reduce((a, b) => a + b, 0);
+            createStatCard('단체복 수량(전체)', formatNumber(uniformSum), false, uniformBreakdown);
 
             // 7. 교통비
             const transportCost = displayRegs.reduce((sum, r) => sum + (Number(r.transportCost) || 0), 0);
@@ -904,9 +927,32 @@
             createStatCard('네트워크 파티 인원(명)', formatNumber(partyCount));
         }
 
-        function createStatCard(label, value, isLargeNumber = false) {
+        function createStatCard(label, value, isLargeNumber = false, detailData = null) {
             const card = document.createElement('div');
             card.classList.add('stat-card');
+            
+            if (detailData) {
+                card.style.cursor = 'pointer';
+                card.title = '자세한 내용을 보려면 클릭해 주세요';
+                card.addEventListener('click', () => {
+                    document.getElementById('stats-detail-title').textContent = label + ' 상세';
+                    const contentDiv = document.getElementById('stats-detail-content');
+                    contentDiv.innerHTML = '';
+                    
+                    for (const [k, v] of Object.entries(detailData)) {
+                        const box = document.createElement('div');
+                        box.style.background = 'rgba(255,255,255,0.6)';
+                        box.style.padding = '1rem';
+                        box.style.borderRadius = '8px';
+                        box.style.textAlign = 'center';
+                        box.style.border = '1px solid rgba(203, 213, 225, 0.8)';
+                        box.innerHTML = `<div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${formatNumber(v)}</div><div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">${k}</div>`;
+                        contentDiv.appendChild(box);
+                    }
+                    
+                    document.getElementById('stats-detail-modal').classList.remove('hidden');
+                });
+            }
             
             const valDiv = document.createElement('div');
             valDiv.classList.add('stat-value');
@@ -1117,6 +1163,10 @@
                 saveBtn.textContent = originalText;
                 saveBtn.disabled = false;
             }
+        });
+
+        document.getElementById('btn-close-stats-detail').addEventListener('click', () => {
+            document.getElementById('stats-detail-modal').classList.add('hidden');
         });
 
         // --- Add Custom Field Modal ---
