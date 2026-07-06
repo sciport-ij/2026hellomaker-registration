@@ -977,6 +977,12 @@
         }
 
         function renderTable() {
+            const editModal = document.getElementById('edit-modal');
+            if (editModal && editModal.parentNode && editModal.parentNode.tagName === 'TD') {
+                editModal.classList.add('hidden');
+                document.body.appendChild(editModal);
+            }
+            
             tableHeadRow.innerHTML = '';
             tableBody.innerHTML = '';
             
@@ -1033,7 +1039,7 @@
             
             displayRegs.forEach(reg => {
                 const tr = document.createElement('tr');
-                tr.addEventListener('click', () => openEditModal(reg));
+                tr.addEventListener('click', () => openEditModal(reg, tr));
                 activeFields.forEach(f => {
                     const td = document.createElement('td');
                     let content = reg[f.id];
@@ -1060,8 +1066,21 @@
         // --- Edit Registration Modal ---
         let currentEditingId = null;
 
-        function openEditModal(reg) {
+        function openEditModal(reg, clickedRow) {
             currentEditingId = reg.id;
+            
+            const existingEditRow = document.querySelector('.edit-row');
+            if (existingEditRow) {
+                if (existingEditRow.previousSibling === clickedRow) {
+                    existingEditRow.remove();
+                    const em = document.getElementById('edit-modal');
+                    em.classList.add('hidden');
+                    document.body.appendChild(em);
+                    return;
+                }
+                existingEditRow.remove();
+            }
+
             const modal = document.getElementById('edit-modal');
             const container = document.getElementById('edit-fields-container');
             const statusSelect = document.getElementById('edit-status-select');
@@ -1113,10 +1132,45 @@
             });
             
             modal.classList.remove('hidden');
+            
+            const editRow = document.createElement('tr');
+            editRow.className = 'edit-row';
+            const td = document.createElement('td');
+            td.colSpan = clickedRow.children.length;
+            td.style.padding = '0';
+            td.style.border = 'none';
+            
+            // Adjust modal styles to fit nicely in the row
+            modal.style.position = 'relative';
+            modal.style.top = 'auto';
+            modal.style.left = 'auto';
+            modal.style.transform = 'none';
+            modal.style.margin = '1rem auto';
+            modal.style.width = '100%';
+            modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            modal.style.border = '1px solid var(--primary)';
+            
+            td.appendChild(modal);
+            editRow.appendChild(td);
+            
+            if (clickedRow.nextSibling) {
+                clickedRow.parentNode.insertBefore(editRow, clickedRow.nextSibling);
+            } else {
+                clickedRow.parentNode.appendChild(editRow);
+            }
+            
+            // Auto scroll to make it visible
+            setTimeout(() => {
+                editRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
         }
 
         document.getElementById('btn-close-edit-top').addEventListener('click', () => {
-            document.getElementById('edit-modal').classList.add('hidden');
+            const editRow = document.querySelector('.edit-row');
+            if (editRow) editRow.remove();
+            const editModal = document.getElementById('edit-modal');
+            editModal.classList.add('hidden');
+            document.body.appendChild(editModal);
         });
 
         document.getElementById('btn-delete-registration').addEventListener('click', async () => {
