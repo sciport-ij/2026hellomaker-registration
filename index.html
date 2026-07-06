@@ -173,16 +173,7 @@
                 </div>
             </div>
 
-            <!-- Stats Detail Modal -->
-            <div id="stats-detail-modal" class="hidden glass-card modal" style="max-height: 80vh; overflow-y: auto;">
-                <h3 id="stats-detail-title">상세 정보</h3>
-                <div id="stats-detail-content" style="margin-bottom: 2rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
-                    <!-- Populated dynamically -->
-                </div>
-                <div class="modal-actions" style="display: flex; justify-content: flex-end;">
-                    <button id="btn-close-stats-detail" class="btn-primary">닫기</button>
-                </div>
-            </div>
+
 
             <!-- Stats Overview -->
             <div class="stats-overview" id="stats-container">
@@ -930,28 +921,38 @@
         function createStatCard(label, value, isLargeNumber = false, detailData = null) {
             const card = document.createElement('div');
             card.classList.add('stat-card');
+            card.style.position = 'relative';
             
             if (detailData) {
                 card.style.cursor = 'pointer';
                 card.title = '자세한 내용을 보려면 클릭해 주세요';
-                card.addEventListener('click', () => {
-                    document.getElementById('stats-detail-title').textContent = label + ' 상세';
-                    const contentDiv = document.getElementById('stats-detail-content');
-                    contentDiv.innerHTML = '';
-                    
-                    for (const [k, v] of Object.entries(detailData)) {
-                        const box = document.createElement('div');
-                        box.style.background = 'rgba(255,255,255,0.6)';
-                        box.style.padding = '1rem';
-                        box.style.borderRadius = '8px';
-                        box.style.textAlign = 'center';
-                        box.style.border = '1px solid rgba(203, 213, 225, 0.8)';
-                        box.innerHTML = `<div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${formatNumber(v)}</div><div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">${k}</div>`;
-                        contentDiv.appendChild(box);
-                    }
-                    
-                    document.getElementById('stats-detail-modal').classList.remove('hidden');
+                
+                const popover = document.createElement('div');
+                popover.classList.add('stat-popover', 'hidden');
+                
+                let popoverHtml = `<h4 style="margin-bottom: 0.8rem; color: var(--primary); font-size: 1rem; text-align: left;">${label} 상세</h4>`;
+                for (const [k, v] of Object.entries(detailData)) {
+                    popoverHtml += `
+                        <div class="stat-popover-item">
+                            <span style="color: var(--text-muted); font-size: 0.95rem;">${k}</span>
+                            <span style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;">${formatNumber(v)}</span>
+                        </div>
+                    `;
+                }
+                popover.innerHTML = popoverHtml;
+                
+                card.addEventListener('click', (e) => {
+                    document.querySelectorAll('.stat-popover').forEach(p => {
+                        if (p !== popover) p.classList.add('hidden');
+                    });
+                    popover.classList.toggle('hidden');
+                    e.stopPropagation();
                 });
+                
+                // Prevent clicks inside popover from bubbling up to the document and closing it
+                popover.addEventListener('click', (e) => e.stopPropagation());
+                
+                card.appendChild(popover);
             }
             
             const valDiv = document.createElement('div');
@@ -1165,8 +1166,9 @@
             }
         });
 
-        document.getElementById('btn-close-stats-detail').addEventListener('click', () => {
-            document.getElementById('stats-detail-modal').classList.add('hidden');
+        // Global click to close popovers
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.stat-popover').forEach(p => p.classList.add('hidden'));
         });
 
         // --- Add Custom Field Modal ---
