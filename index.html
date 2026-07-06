@@ -153,7 +153,7 @@
             </div>
 
             <!-- Edit Registration Modal -->
-            <div id="edit-modal" class="hidden glass-card modal" style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+            <div id="edit-modal" class="hidden glass-card modal" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
                 <button id="btn-close-edit-top" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
                 <h3 style="margin-bottom: 0.5rem;">데이터 수정 및 관리</h3>
                 
@@ -987,12 +987,6 @@
         }
 
         function renderTable() {
-            const editModal = document.getElementById('edit-modal');
-            if (editModal && editModal.parentNode && editModal.parentNode.tagName === 'TD') {
-                editModal.classList.add('hidden');
-                document.body.appendChild(editModal);
-            }
-            
             tableHeadRow.innerHTML = '';
             tableBody.innerHTML = '';
             
@@ -1049,7 +1043,7 @@
             
             displayRegs.forEach(reg => {
                 const tr = document.createElement('tr');
-                tr.addEventListener('click', () => openEditModal(reg, tr));
+                tr.addEventListener('click', () => openEditModal(reg));
                 activeFields.forEach(f => {
                     const td = document.createElement('td');
                     let content = reg[f.id];
@@ -1076,21 +1070,9 @@
         // --- Edit Registration Modal ---
         let currentEditingId = null;
 
-        function openEditModal(reg, clickedRow) {
+        function openEditModal(reg) {
             currentEditingId = reg.id;
             
-            const existingEditRow = document.querySelector('.edit-row');
-            if (existingEditRow) {
-                if (existingEditRow.previousSibling === clickedRow) {
-                    existingEditRow.remove();
-                    const em = document.getElementById('edit-modal');
-                    em.classList.add('hidden');
-                    document.body.appendChild(em);
-                    return;
-                }
-                existingEditRow.remove();
-            }
-
             const modal = document.getElementById('edit-modal');
             const container = document.getElementById('edit-fields-container');
             const statusSelect = document.getElementById('edit-status-select');
@@ -1141,46 +1123,22 @@
                 container.appendChild(div);
             });
             
+            // Clear any inline styles that might have been added by the accordion logic
+            modal.style.position = '';
+            modal.style.top = '';
+            modal.style.left = '';
+            modal.style.transform = '';
+            modal.style.margin = '';
+            modal.style.width = '';
+            modal.style.boxShadow = '';
+            modal.style.border = '';
+            modal.style.background = '';
+            
             modal.classList.remove('hidden');
-            
-            const editRow = document.createElement('tr');
-            editRow.className = 'edit-row';
-            const td = document.createElement('td');
-            td.colSpan = clickedRow.children.length;
-            td.style.padding = '0';
-            td.style.border = 'none';
-            
-            // Adjust modal styles to fit nicely in the row
-            modal.style.position = 'relative';
-            modal.style.top = 'auto';
-            modal.style.left = 'auto';
-            modal.style.transform = 'none';
-            modal.style.margin = '1rem auto';
-            modal.style.width = '100%';
-            modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-            modal.style.border = '1px solid var(--primary)';
-            
-            td.appendChild(modal);
-            editRow.appendChild(td);
-            
-            if (clickedRow.nextSibling) {
-                clickedRow.parentNode.insertBefore(editRow, clickedRow.nextSibling);
-            } else {
-                clickedRow.parentNode.appendChild(editRow);
-            }
-            
-            // Auto scroll to make it visible
-            setTimeout(() => {
-                editRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
         }
 
         document.getElementById('btn-close-edit-top').addEventListener('click', () => {
-            const editRow = document.querySelector('.edit-row');
-            if (editRow) editRow.remove();
-            const editModal = document.getElementById('edit-modal');
-            editModal.classList.add('hidden');
-            document.body.appendChild(editModal);
+            document.getElementById('edit-modal').classList.add('hidden');
         });
 
         document.getElementById('btn-delete-registration').addEventListener('click', async () => {
