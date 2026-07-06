@@ -837,12 +837,19 @@
             });
         }
 
+        function formatNumber(num) {
+            if (num === null || num === undefined) return '';
+            if (typeof num === 'number') return num.toLocaleString();
+            if (typeof num === 'string' && !isNaN(Number(num)) && num.trim() !== '') {
+                return Number(num).toLocaleString();
+            }
+            return num;
+        }
+
         function renderStats() {
             statsContainer.innerHTML = '';
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
-            const allFields = getAllUniqueFields(categoryFilter);
-            const numberFields = allFields.filter(f => f.type === 'number');
             
             let displayRegs = registrations;
             if (categoryFilter !== '전체') {
@@ -856,20 +863,66 @@
                 displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
             }
             
+            // 1. 전체 등록 수
             createStatCard('전체 등록 수', displayRegs.length + '팀');
             
-            numberFields.forEach(field => {
-                const total = displayRegs.reduce((sum, reg) => sum + (Number(reg[field.id]) || 0), 0);
-                if(total > 0) {
-                    createStatCard(field.label, total);
-                }
-            });
+            // 2. 그리머 섭외건
+            const greemerCount = displayRegs.filter(r => r.greemerCast === 'Y').length;
+            createStatCard('그리머 섭외건', formatNumber(greemerCount) + '건');
+            
+            // 3. 테이블 수량
+            const tableCount = displayRegs.reduce((sum, r) => sum + (Number(r.tableCount) || 0), 0);
+            createStatCard('테이블 수량(개)', formatNumber(tableCount));
+
+            // 4. 의자 수량
+            const chairCount = displayRegs.reduce((sum, r) => sum + (Number(r.chairCount) || 0), 0);
+            createStatCard('의자 수량(개)', formatNumber(chairCount));
+
+            // 5. 중식인원
+            const lunchCount = displayRegs.reduce((sum, r) => sum + (Number(r.lunchCount) || 0), 0);
+            createStatCard('중식인원(명)', formatNumber(lunchCount));
+
+            // 6. 단체복 수량(전체합계)
+            const uniformSum = displayRegs.reduce((sum, r) => {
+                return sum + 
+                       (Number(r.uniformCount_XS) || 0) +
+                       (Number(r.uniformCount_S) || 0) +
+                       (Number(r.uniformCount_M) || 0) +
+                       (Number(r.uniformCount_L) || 0) +
+                       (Number(r.uniformCount_XL) || 0) +
+                       (Number(r.uniformCount_2XL) || 0) +
+                       (Number(r.uniformCount_3XL) || 0);
+            }, 0);
+            createStatCard('단체복 수량(전체)', formatNumber(uniformSum));
+
+            // 7. 교통비
+            const transportCost = displayRegs.reduce((sum, r) => sum + (Number(r.transportCost) || 0), 0);
+            createStatCard('교통비(예상금액)', formatNumber(transportCost) + '원', true);
+
+            // 8. 네트워크 파티 인원
+            const partyCount = displayRegs.reduce((sum, r) => sum + (Number(r.networkPartyCount) || 0), 0);
+            createStatCard('네트워크 파티 인원(명)', formatNumber(partyCount));
         }
 
-        function createStatCard(label, value) {
+        function createStatCard(label, value, isLargeNumber = false) {
             const card = document.createElement('div');
             card.classList.add('stat-card');
-            card.innerHTML = `<div class="stat-value">${value}</div><div class="stat-label">${label}</div>`;
+            
+            const valDiv = document.createElement('div');
+            valDiv.classList.add('stat-value');
+            valDiv.textContent = value;
+            if (isLargeNumber && String(value).length > 7) {
+                valDiv.style.fontSize = '1.8rem';
+            } else if (String(value).length > 10) {
+                valDiv.style.fontSize = '1.5rem';
+            }
+            card.appendChild(valDiv);
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.classList.add('stat-label');
+            labelDiv.textContent = label;
+            card.appendChild(labelDiv);
+            
             statsContainer.appendChild(card);
         }
 
@@ -933,12 +986,21 @@
                 tr.addEventListener('click', () => openEditModal(reg));
                 activeFields.forEach(f => {
                     const td = document.createElement('td');
-                    let content = reg[f.id] || '-';
+                    let content = reg[f.id];
+                    let rawContent = content; // for tooltip
+                    
                     if (f.id === 'status') {
                         content = reg.status || '미정';
+                        rawContent = content;
+                    } else {
+                        if (f.type === 'number' && content !== undefined && content !== null && content !== '') {
+                            content = formatNumber(content);
+                        } else if (content === undefined || content === null || content === '') {
+                            content = '-';
+                        }
                     }
                     td.textContent = content;
-                    td.title = content; // for tooltip
+                    td.title = rawContent || '';
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
