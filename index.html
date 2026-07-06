@@ -230,6 +230,26 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination Controls -->
+            <div id="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.5); border-radius: 8px; border: 1px solid var(--glass-border);">
+                <div>
+                    <label style="font-weight: bold; margin-right: 0.5rem; color: var(--text-main);">페이지 당 데이터 수:</label>
+                    <select id="page-size-select" style="padding: 0.4rem; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 0.95rem;">
+                        <option value="10">10개씩 보기</option>
+                        <option value="30">30개씩 보기</option>
+                        <option value="50">50개씩 보기</option>
+                        <option value="100">100개씩 보기</option>
+                        <option value="all">모두 보기</option>
+                    </select>
+                </div>
+                <div id="pagination-buttons" style="display: flex; gap: 0.5rem; align-items: center;">
+                    <!-- Buttons will be generated dynamically -->
+                </div>
+                <div id="pagination-info" style="color: var(--text-muted); font-size: 0.95rem; font-weight: bold;">
+                    <!-- e.g. 전체 N명 -->
+                </div>
+            </div>
         </section>
     </main>
     </div>
@@ -528,6 +548,9 @@
         const tableBody = document.getElementById('table-body');
         const statsContainer = document.getElementById('stats-container');
         const columnToggles = document.getElementById('column-toggles');
+        const pageSizeSelect = document.getElementById('page-size-select');
+        const paginationButtons = document.getElementById('pagination-buttons');
+        const paginationInfo = document.getElementById('pagination-info');
 
         // --- Initialization ---
         async function init() {
@@ -741,8 +764,18 @@
         });
 
         // --- Dashboard ---
-        let currentSortColumn = 'timestamp';
+        let visibleColumns = new Set();
+        let currentSortColumn = 'createdAt';
         let currentSortDirection = 'desc';
+        let currentPage = 1;
+        let pageSize = 10;
+        
+        pageSizeSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            pageSize = val === 'all' ? 'all' : parseInt(val, 10);
+            currentPage = 1;
+            renderTable();
+        });
 
         async function refreshDashboard() {
             registrations = await getRegistrations();
@@ -750,6 +783,7 @@
             const categoryFilterSelect = document.getElementById('dashboard-category-filter');
             if (categoryFilterSelect && !categoryFilterSelect.hasAttribute('data-bound')) {
                 categoryFilterSelect.addEventListener('change', () => {
+                    currentPage = 1;
                     renderColumnToggles();
                     renderStats();
                     renderTable();
@@ -760,6 +794,7 @@
             const statusFilterSelect = document.getElementById('dashboard-status-filter');
             if (statusFilterSelect && !statusFilterSelect.hasAttribute('data-bound')) {
                 statusFilterSelect.addEventListener('change', () => {
+                    currentPage = 1;
                     renderStats();
                     renderTable();
                 });
@@ -769,6 +804,7 @@
             const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
             if (greemerFilterCheck && !greemerFilterCheck.hasAttribute('data-bound')) {
                 greemerFilterCheck.addEventListener('change', () => {
+                    currentPage = 1;
                     renderStats();
                     renderTable();
                 });
@@ -1001,6 +1037,7 @@
                         currentSortColumn = f.id;
                         currentSortDirection = 'asc';
                     }
+                    currentPage = 1;
                     renderTable();
                 });
                 tableHeadRow.appendChild(th);
@@ -1032,7 +1069,20 @@
                 return 0;
             });
             
-            displayRegs.forEach(reg => {
+            // Pagination Logic
+            const totalItems = displayRegs.length;
+            let totalPages = pageSize === 'all' ? 1 : Math.ceil(totalItems / pageSize);
+            if (totalPages === 0) totalPages = 1;
+            
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            
+            const startIndex = pageSize === 'all' ? 0 : (currentPage - 1) * pageSize;
+            const endIndex = pageSize === 'all' ? totalItems : Math.min(startIndex + pageSize, totalItems);
+            
+            const pagedRegs = displayRegs.slice(startIndex, endIndex);
+            
+            pagedRegs.forEach(reg => {
                 const tr = document.createElement('tr');
                 tr.addEventListener('click', () => openEditModal(reg));
                 activeFields.forEach(f => {
@@ -1056,6 +1106,85 @@
                 });
                 tableBody.appendChild(tr);
             });
+            
+            renderPaginationControls(totalItems, totalPages);
+        }
+
+        function renderPaginationControls(totalItems, totalPages) {
+            paginationButtons.innerHTML = '';
+            
+            if (totalItems === 0) {
+                paginationInfo.textContent = '조회된 데이터가 없습니다.';
+                return;
+            }
+            
+            paginationInfo.textContent = `전체 ${formatNumber(totalItems)}건`;
+            
+            if (pageSize === 'all' || totalPages <= 1) return;
+            
+            // Prev button
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '◀';
+            prevBtn.style.padding = '0.3rem 0.6rem';
+            prevBtn.style.border = '1px solid #cbd5e1';
+            prevBtn.style.borderRadius = '4px';
+            prevBtn.style.background = currentPage === 1 ? '#f1f5f9' : 'white';
+            prevBtn.style.cursor = currentPage === 1 ? 'not-allowed' : 'pointer';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+            paginationButtons.appendChild(prevBtn);
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                // Show a window of pages around the current page (e.g. current +- 2)
+                if (totalPages > 7 && (i < currentPage - 2 || i > currentPage + 2) && i !== 1 && i !== totalPages) {
+                    if (i === currentPage - 3 || i === currentPage + 3) {
+                        const dots = document.createElement('span');
+                        dots.textContent = '...';
+                        dots.style.margin = '0 0.2rem';
+                        paginationButtons.appendChild(dots);
+                    }
+                    continue;
+                }
+                
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.style.padding = '0.3rem 0.7rem';
+                pageBtn.style.border = '1px solid ' + (i === currentPage ? 'var(--primary)' : '#cbd5e1');
+                pageBtn.style.borderRadius = '4px';
+                pageBtn.style.background = i === currentPage ? 'var(--primary)' : 'white';
+                pageBtn.style.color = i === currentPage ? 'white' : 'var(--text-main)';
+                pageBtn.style.cursor = 'pointer';
+                pageBtn.style.fontWeight = i === currentPage ? 'bold' : 'normal';
+                
+                pageBtn.addEventListener('click', () => {
+                    currentPage = i;
+                    renderTable();
+                });
+                paginationButtons.appendChild(pageBtn);
+            }
+            
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '▶';
+            nextBtn.style.padding = '0.3rem 0.6rem';
+            nextBtn.style.border = '1px solid #cbd5e1';
+            nextBtn.style.borderRadius = '4px';
+            nextBtn.style.background = currentPage === totalPages ? '#f1f5f9' : 'white';
+            nextBtn.style.cursor = currentPage === totalPages ? 'not-allowed' : 'pointer';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+            paginationButtons.appendChild(nextBtn);
         }
 
         // --- Edit Registration Modal ---
