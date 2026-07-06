@@ -153,23 +153,26 @@
             </div>
 
             <!-- Edit Registration Modal -->
-            <div id="edit-modal" class="hidden glass-card modal" style="max-height: 80vh; overflow-y: auto;">
-                <h3>데이터 수정 및 관리</h3>
-                <div class="input-group" style="margin-bottom: 1.5rem;">
-                    <label>선정 상태</label>
-                    <select id="edit-status-select" style="padding: 0.8rem; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.5); font-size: 1rem;">
+            <div id="edit-modal" class="hidden glass-card modal" style="max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative;">
+                <button id="btn-close-edit-top" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
+                <h3 style="margin-bottom: 0.5rem;">데이터 수정 및 관리</h3>
+                
+                <div class="input-group" style="margin-bottom: 2rem; background: rgba(255,255,255,0.7); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(0,0,0,0.1);">
+                    <label style="font-weight: bold; color: var(--primary);">선정 상태 변경</label>
+                    <select id="edit-status-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
                         <option value="미정">미정</option>
                         <option value="선정">선정</option>
                         <option value="미선정">미선정</option>
                     </select>
                 </div>
-                <div id="edit-fields-container" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                
+                <div id="edit-fields-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <!-- Dynamically populated fields will appear here -->
                 </div>
-                <div class="modal-actions" style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button id="btn-delete-registration" class="btn-secondary" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444; margin-right: auto;">데이터 삭제</button>
-                    <button id="btn-cancel-edit" class="btn-text">취소</button>
-                    <button id="btn-save-edit" class="btn-primary">변경사항 저장</button>
+                
+                <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.5rem;">
+                    <button id="btn-delete-registration" class="btn-secondary" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444;">데이터 삭제</button>
+                    <button id="btn-save-edit" class="btn-primary" style="padding-left: 2rem; padding-right: 2rem;">변경사항 저장</button>
                 </div>
             </div>
 
@@ -1112,7 +1115,7 @@
             modal.classList.remove('hidden');
         }
 
-        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+        document.getElementById('btn-close-edit-top').addEventListener('click', () => {
             document.getElementById('edit-modal').classList.add('hidden');
         });
 
