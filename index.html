@@ -646,8 +646,20 @@
                     group.style.alignItems = 'center';
                 } else {
                     input = document.createElement('input');
-                    input.type = field.type;
-                    if(field.type === 'number') input.min = 0;
+                    if (field.type === 'number') {
+                        input.type = 'text';
+                        input.inputMode = 'numeric';
+                        input.addEventListener('input', function() {
+                            let rawValue = this.value.replace(/[^\d]/g, '');
+                            if (rawValue) {
+                                this.value = Number(rawValue).toLocaleString();
+                            } else {
+                                this.value = '';
+                            }
+                        });
+                    } else {
+                        input.type = field.type;
+                    }
                 }
                 
                 input.id = `input-${field.id}`;
@@ -738,7 +750,11 @@
                 if (f.type === 'checkbox') {
                     data[f.id] = formData.has(f.id) ? 'Y' : 'N';
                 } else if (f.type === 'number' && data[f.id]) {
-                    data[f.id] = parseInt(data[f.id], 10);
+                    if (typeof data[f.id] === 'string') {
+                        data[f.id] = parseInt(data[f.id].replace(/[^\d]/g, ''), 10);
+                    } else {
+                        data[f.id] = parseInt(data[f.id], 10);
+                    }
                 }
             });
 
@@ -1234,11 +1250,28 @@
                     div.style.alignItems = 'center';
                 } else {
                     input = document.createElement('input');
-                    input.type = f.type || 'text';
+                    if (f.type === 'number') {
+                        input.type = 'text';
+                        input.inputMode = 'numeric';
+                        input.addEventListener('input', function() {
+                            let rawValue = this.value.replace(/[^\d]/g, '');
+                            if (rawValue) {
+                                this.value = Number(rawValue).toLocaleString();
+                            } else {
+                                this.value = '';
+                            }
+                        });
+                    } else {
+                        input.type = f.type || 'text';
+                    }
                 }
                 input.id = `edit-field-${f.id}`;
                 if (f.type !== 'checkbox') {
-                    input.value = reg[f.id] || '';
+                    if (f.type === 'number' && reg[f.id] !== undefined && reg[f.id] !== null && reg[f.id] !== '') {
+                        input.value = Number(reg[f.id]).toLocaleString();
+                    } else {
+                        input.value = reg[f.id] || '';
+                    }
                 }
                 div.appendChild(input);
                 container.appendChild(div);
@@ -1288,7 +1321,11 @@
                     if (f.type === 'checkbox') {
                         val = input.checked ? 'Y' : 'N';
                     } else if (f.type === 'number' && val) {
-                        val = parseInt(val, 10);
+                        if (typeof val === 'string') {
+                            val = parseInt(val.replace(/[^\d]/g, ''), 10);
+                        } else {
+                            val = parseInt(val, 10);
+                        }
                     }
                     updatedData[f.id] = val;
                 }
