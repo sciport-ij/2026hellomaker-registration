@@ -210,6 +210,11 @@
                             <input type="checkbox" id="dashboard-greemer-filter" style="width: 1.2rem; height: 1.2rem;"> 그리머 섭외건만 보기
                         </label>
                     </div>
+                    <!-- SEARCH INPUT -->
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                        <strong style="color: var(--text-main);">검색:</strong>
+                        <input type="text" id="dashboard-search-input" placeholder="이름, 단체명, 이메일, 전화" style="padding: 0.4rem; border-radius: 4px; border: 1px solid #cbd5e1; width: 220px;">
+                    </div>
                 </div>
                 <h4>표시할 데이터 선택</h4>
                 <div id="column-toggles" class="checkbox-group">
@@ -786,6 +791,7 @@
         let currentSortDirection = 'desc';
         let currentPage = 1;
         let pageSize = 10;
+        let searchQuery = '';
         
         pageSizeSelect.addEventListener('change', (e) => {
             const val = e.target.value;
@@ -828,9 +834,50 @@
                 greemerFilterCheck.setAttribute('data-bound', 'true');
             }
 
+            const searchInput = document.getElementById('dashboard-search-input');
+            if (searchInput && !searchInput.hasAttribute('data-bound')) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.trim().toLowerCase();
+                    currentPage = 1;
+                    renderStats();
+                    renderTable();
+                });
+                searchInput.setAttribute('data-bound', 'true');
+            }
+
             renderColumnToggles();
             renderStats();
             renderTable();
+        }
+
+        function getFilteredRegistrations() {
+            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
+            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
+            const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
+            
+            let displayRegs = registrations;
+            if (categoryFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
+            }
+            if (statusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
+            }
+            if (greemerFilterCheck && greemerFilterCheck.checked) {
+                displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
+            }
+            if (searchQuery) {
+                const q = searchQuery;
+                displayRegs = displayRegs.filter(r => {
+                    const matchName = r.name && String(r.name).toLowerCase().includes(q);
+                    const matchEmail = r.email && String(r.email).toLowerCase().includes(q);
+                    const matchPhone = r.phone && String(r.phone).includes(q);
+                    const matchOrg = (r.groupName && String(r.groupName).toLowerCase().includes(q)) ||
+                                     (r.schoolName && String(r.schoolName).toLowerCase().includes(q)) ||
+                                     (r.companyName && String(r.companyName).toLowerCase().includes(q));
+                    return matchName || matchEmail || matchPhone || matchOrg;
+                });
+            }
+            return displayRegs;
         }
 
         function renderColumnToggles() {
@@ -906,20 +953,8 @@
 
         function renderStats() {
             statsContainer.innerHTML = '';
-            const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
-            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             
-            let displayRegs = registrations;
-            if (categoryFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
-            }
-            if (statusFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
-            }
-            const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
-            if (greemerFilterCheck && greemerFilterCheck.checked) {
-                displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
-            }
+            let displayRegs = getFilteredRegistrations();
             
             // 1. 전체 등록 수
             const totalBreakdown = {
@@ -1060,17 +1095,7 @@
                 tableHeadRow.appendChild(th);
             });
             
-            let displayRegs = registrations;
-            if (categoryFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
-            }
-            if (statusFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
-            }
-            const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
-            if (greemerFilterCheck && greemerFilterCheck.checked) {
-                displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
-            }
+            let displayRegs = getFilteredRegistrations();
             
             displayRegs.sort((a, b) => {
                 let valA = a[currentSortColumn] || '';
