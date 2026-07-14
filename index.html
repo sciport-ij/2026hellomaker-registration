@@ -183,6 +183,11 @@
                         <label style="font-weight: bold; color: var(--primary);">미정/미선정 사유</label>
                         <input type="text" id="edit-reason-input" placeholder="사유를 입력해주세요" style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem;">
                     </div>
+                    
+                    <div id="edit-museum-comment-container" class="input-group full-width" style="flex-basis: 100%; margin-top: 1rem; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">과학관 코멘트 (내부용)</label>
+                        <textarea id="edit-museum-comment-input" placeholder="과학관 내부 관리용 코멘트를 자유롭게 적어주세요." style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; min-height: 80px;"></textarea>
+                    </div>
                 </div>
                 
                 <div id="edit-fields-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
@@ -943,7 +948,7 @@
             
             const toggleItems = [];
             const processedFields = new Set();
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'statusReason', label: '사유'}, ...allFields];
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, ...allFields];
 
             all.forEach(field => {
                 if (processedFields.has(field.id)) return;
@@ -1127,8 +1132,8 @@
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, ...allFields];
-            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || f.id === 'statusReason' || visibleColumns.has(f.id));
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, ...allFields];
+            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || f.id === 'statusReason' || f.id === 'museumComment' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
                 const th = document.createElement('th');
@@ -1312,6 +1317,7 @@
             const museumCheckSelect = document.getElementById('edit-museum-check-select');
             const reasonContainer = document.getElementById('edit-reason-container');
             const reasonInput = document.getElementById('edit-reason-input');
+            const museumCommentInput = document.getElementById('edit-museum-comment-input');
             
             statusSelect.value = reg.status || '미정';
             if (museumCheckSelect) {
@@ -1319,6 +1325,9 @@
             }
             if (reasonInput) {
                 reasonInput.value = reg.statusReason || '';
+            }
+            if (museumCommentInput) {
+                museumCommentInput.value = reg.museumComment || '';
             }
             if (reasonContainer) {
                 if (['미정', '미선정'].includes(statusSelect.value)) {
@@ -1431,10 +1440,11 @@
             const status = document.getElementById('edit-status-select').value;
             const museumChecked = document.getElementById('edit-museum-check-select') ? document.getElementById('edit-museum-check-select').value : '미확인';
             const statusReason = document.getElementById('edit-reason-input') ? document.getElementById('edit-reason-input').value : '';
+            const museumComment = document.getElementById('edit-museum-comment-input') ? document.getElementById('edit-museum-comment-input').value : '';
             const reg = registrations.find(r => r.id === currentEditingId);
             if (!reg) return;
             
-            const updatedData = { status, museumChecked, statusReason };
+            const updatedData = { status, museumChecked, statusReason, museumComment };
             
             const schema = SCHEMAS[reg.category] || [];
             const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
