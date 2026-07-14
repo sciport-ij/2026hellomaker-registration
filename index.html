@@ -1513,12 +1513,27 @@
             btnSaveEditTopAction.addEventListener('click', () => handleSaveEdit('btn-save-edit-top-action'));
         }
 
-        // Global click to close popovers
+        // Global click to close popovers and modals
         document.addEventListener('click', () => {
             document.querySelectorAll('.stat-popover').forEach(p => {
                 p.classList.add('hidden');
                 p.parentNode.style.zIndex = '1';
             });
+        });
+
+        // Close edit modal when clicking outside
+        document.addEventListener('mousedown', (e) => {
+            const editModal = document.getElementById('edit-modal');
+            if (editModal && !editModal.classList.contains('hidden')) {
+                if (!editModal.contains(e.target)) {
+                    // Don't close if clicking on a table row, as it will open another modal
+                    const tr = e.target.closest('tr');
+                    if (tr && tr.closest('#table-body')) {
+                        return;
+                    }
+                    editModal.classList.add('hidden');
+                }
+            }
         });
 
         // --- Add Custom Field Modal ---
