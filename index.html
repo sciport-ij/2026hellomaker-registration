@@ -175,6 +175,11 @@
                             <option value="미선정">미선정</option>
                         </select>
                     </div>
+                    
+                    <div id="edit-reason-container" class="input-group full-width hidden" style="flex-basis: 100%; margin-top: 1rem; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">미정/미선정 사유</label>
+                        <input type="text" id="edit-reason-input" placeholder="사유를 입력해주세요" style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem;">
+                    </div>
                 </div>
                 
                 <div id="edit-fields-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
@@ -572,6 +577,20 @@
         const btnConfirmAddField = document.getElementById('btn-confirm-add-field');
         const btnCancelAddField = document.getElementById('btn-cancel-add-field');
         const tableHeadRow = document.getElementById('table-head-row');
+        
+        // Toggle edit reason input visibility
+        const editStatusSelectGlobal = document.getElementById('edit-status-select');
+        const editReasonContainerGlobal = document.getElementById('edit-reason-container');
+        if (editStatusSelectGlobal && editReasonContainerGlobal) {
+            editStatusSelectGlobal.addEventListener('change', (e) => {
+                if (['미정', '미선정'].includes(e.target.value)) {
+                    editReasonContainerGlobal.classList.remove('hidden');
+                } else {
+                    editReasonContainerGlobal.classList.add('hidden');
+                }
+            });
+        }
+        
         const tableBody = document.getElementById('table-body');
         const statsContainer = document.getElementById('stats-container');
         const columnToggles = document.getElementById('column-toggles');
@@ -921,7 +940,7 @@
             
             const toggleItems = [];
             const processedFields = new Set();
-            const all = [{id: 'category', label: '메이커 구분'}, ...allFields];
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'statusReason', label: '사유'}, ...allFields];
 
             all.forEach(field => {
                 if (processedFields.has(field.id)) return;
@@ -1105,8 +1124,8 @@
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, ...allFields];
-            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || visibleColumns.has(f.id));
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, ...allFields];
+            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || f.id === 'statusReason' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
                 const th = document.createElement('th');
@@ -1288,10 +1307,22 @@
             const container = document.getElementById('edit-fields-container');
             const statusSelect = document.getElementById('edit-status-select');
             const museumCheckSelect = document.getElementById('edit-museum-check-select');
+            const reasonContainer = document.getElementById('edit-reason-container');
+            const reasonInput = document.getElementById('edit-reason-input');
             
             statusSelect.value = reg.status || '미정';
             if (museumCheckSelect) {
                 museumCheckSelect.value = reg.museumChecked || '미확인';
+            }
+            if (reasonInput) {
+                reasonInput.value = reg.statusReason || '';
+            }
+            if (reasonContainer) {
+                if (['미정', '미선정'].includes(statusSelect.value)) {
+                    reasonContainer.classList.remove('hidden');
+                } else {
+                    reasonContainer.classList.add('hidden');
+                }
             }
             container.innerHTML = '';
             
@@ -1384,10 +1415,11 @@
         document.getElementById('btn-save-edit').addEventListener('click', async () => {
             const status = document.getElementById('edit-status-select').value;
             const museumChecked = document.getElementById('edit-museum-check-select') ? document.getElementById('edit-museum-check-select').value : '미확인';
+            const statusReason = document.getElementById('edit-reason-input') ? document.getElementById('edit-reason-input').value : '';
             const reg = registrations.find(r => r.id === currentEditingId);
             if (!reg) return;
             
-            const updatedData = { status, museumChecked };
+            const updatedData = { status, museumChecked, statusReason };
             
             const schema = SCHEMAS[reg.category] || [];
             const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
