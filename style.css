@@ -525,6 +525,36 @@ tbody tr {
 }
 
 /* Modal */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge-pending {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.status-badge-approved {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.status-badge-rejected {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.status-badge-hold {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+}
+
 .modal {
     position: fixed;
     top: 50%;

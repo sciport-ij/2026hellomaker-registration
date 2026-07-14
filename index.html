@@ -157,13 +157,24 @@
                 <button id="btn-close-edit-top" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
                 <h3 style="margin-bottom: 0.5rem;">데이터 수정 및 관리</h3>
                 
-                <div class="input-group" style="margin-bottom: 2rem; background: rgba(255,255,255,0.7); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(0,0,0,0.1);">
-                    <label style="font-weight: bold; color: var(--primary);">선정 상태 변경</label>
-                    <select id="edit-status-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
-                        <option value="미정">미정</option>
-                        <option value="선정">선정</option>
-                        <option value="미선정">미선정</option>
-                    </select>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; background: rgba(255,255,255,0.7); padding: 1rem; border-radius: 12px; border: 1px dashed rgba(0,0,0,0.1);">
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">과학관 확인</label>
+                        <select id="edit-museum-check-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
+                            <option value="미확인">미확인</option>
+                            <option value="확인">확인</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">선정 상태 변경</label>
+                        <select id="edit-status-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
+                            <option value="미정">미정</option>
+                            <option value="보류">보류</option>
+                            <option value="선정">선정</option>
+                            <option value="미선정">미선정</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div id="edit-fields-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
@@ -198,11 +209,20 @@
                     </div>
                     <div>
                         <strong style="margin-right: 1rem; color: var(--text-main);">선정 상태 필터:</strong>
-                        <select id="dashboard-status-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 150px;">
-                            <option value="전체">상태 무관 (전체)</option>
+                        <select id="dashboard-status-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 120px;">
+                            <option value="전체">상태 무관</option>
                             <option value="선정">선정</option>
                             <option value="미선정">미선정</option>
                             <option value="미정">미정</option>
+                            <option value="보류">보류</option>
+                        </select>
+                    </div>
+                    <div>
+                        <strong style="margin-right: 1rem; color: var(--text-main);">과학관 확인:</strong>
+                        <select id="dashboard-museum-check-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 120px;">
+                            <option value="전체">확인 무관</option>
+                            <option value="확인">확인</option>
+                            <option value="미확인">미확인</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center;">
@@ -824,6 +844,16 @@
                 statusFilterSelect.setAttribute('data-bound', 'true');
             }
 
+            const museumCheckFilterSelect = document.getElementById('dashboard-museum-check-filter');
+            if (museumCheckFilterSelect && !museumCheckFilterSelect.hasAttribute('data-bound')) {
+                museumCheckFilterSelect.addEventListener('change', () => {
+                    currentPage = 1;
+                    renderStats();
+                    renderTable();
+                });
+                museumCheckFilterSelect.setAttribute('data-bound', 'true');
+            }
+
             const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
             if (greemerFilterCheck && !greemerFilterCheck.hasAttribute('data-bound')) {
                 greemerFilterCheck.addEventListener('change', () => {
@@ -853,6 +883,7 @@
         function getFilteredRegistrations() {
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
+            const museumCheckFilter = document.getElementById('dashboard-museum-check-filter') ? document.getElementById('dashboard-museum-check-filter').value : '전체';
             const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
             
             let displayRegs = registrations;
@@ -861,6 +892,9 @@
             }
             if (statusFilter !== '전체') {
                 displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
+            }
+            if (museumCheckFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.museumChecked || '미확인') === museumCheckFilter);
             }
             if (greemerFilterCheck && greemerFilterCheck.checked) {
                 displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
@@ -1070,10 +1104,9 @@
             tableBody.innerHTML = '';
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
-            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'status', label: '선정 상태'}, ...allFields];
-            const activeFields = all.filter(f => f.id === 'status' || visibleColumns.has(f.id));
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, ...allFields];
+            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
                 const th = document.createElement('th');
@@ -1104,6 +1137,10 @@
                     valA = a.status || '미정';
                     valB = b.status || '미정';
                 }
+                if (currentSortColumn === 'museumChecked') {
+                    valA = a.museumChecked || '미확인';
+                    valB = b.museumChecked || '미확인';
+                }
                 if (typeof valA === 'string') valA = valA.toLowerCase();
                 if (typeof valB === 'string') valB = valB.toLowerCase();
                 if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
@@ -1133,17 +1170,29 @@
                     let rawContent = content; // for tooltip
                     
                     if (f.id === 'status') {
-                        content = reg.status || '미정';
-                        rawContent = content;
+                        const st = reg.status || '미정';
+                        let badgeClass = 'status-badge-pending';
+                        if (st === '선정') badgeClass = 'status-badge-approved';
+                        else if (st === '미선정') badgeClass = 'status-badge-rejected';
+                        else if (st === '보류') badgeClass = 'status-badge-hold';
+                        td.innerHTML = `<span class="status-badge ${badgeClass}">${st}</span>`;
+                    } else if (f.id === 'museumChecked') {
+                        const mc = reg.museumChecked || '미확인';
+                        let badgeClass = mc === '확인' ? 'status-badge-approved' : 'status-badge-pending';
+                        td.innerHTML = `<span class="status-badge ${badgeClass}">${mc}</span>`;
+                    } else if (f.type === 'checkbox') {
+                        content = content === 'Y' ? 'O' : 'X';
+                        td.textContent = content;
+                        td.title = rawContent || '';
                     } else {
                         if (f.type === 'number' && content !== undefined && content !== null && content !== '') {
                             content = formatNumber(content);
                         } else if (content === undefined || content === null || content === '') {
                             content = '-';
                         }
+                        td.textContent = content;
+                        td.title = rawContent || '';
                     }
-                    td.textContent = content;
-                    td.title = rawContent || '';
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
@@ -1238,8 +1287,12 @@
             const modal = document.getElementById('edit-modal');
             const container = document.getElementById('edit-fields-container');
             const statusSelect = document.getElementById('edit-status-select');
+            const museumCheckSelect = document.getElementById('edit-museum-check-select');
             
             statusSelect.value = reg.status || '미정';
+            if (museumCheckSelect) {
+                museumCheckSelect.value = reg.museumChecked || '미확인';
+            }
             container.innerHTML = '';
             
             const schema = SCHEMAS[reg.category] || [];
@@ -1330,10 +1383,11 @@
 
         document.getElementById('btn-save-edit').addEventListener('click', async () => {
             const status = document.getElementById('edit-status-select').value;
+            const museumChecked = document.getElementById('edit-museum-check-select') ? document.getElementById('edit-museum-check-select').value : '미확인';
             const reg = registrations.find(r => r.id === currentEditingId);
             if (!reg) return;
             
-            const updatedData = { status };
+            const updatedData = { status, museumChecked };
             
             const schema = SCHEMAS[reg.category] || [];
             const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
