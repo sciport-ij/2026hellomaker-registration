@@ -238,9 +238,12 @@
                             <option value="미확인">미확인</option>
                         </select>
                     </div>
-                    <div style="display: flex; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
                         <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-weight: bold; cursor: pointer;">
                             <input type="checkbox" id="dashboard-greemer-filter" style="width: 1.2rem; height: 1.2rem;"> 그리머 섭외건만 보기
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-main); font-weight: bold; cursor: pointer;">
+                            <input type="checkbox" id="dashboard-museum-comment-filter" style="width: 1.2rem; height: 1.2rem;"> 코멘트 작성건만 보기
                         </label>
                     </div>
                     <!-- SEARCH INPUT -->
@@ -891,6 +894,16 @@
                 greemerFilterCheck.setAttribute('data-bound', 'true');
             }
 
+            const museumCommentFilterCheck = document.getElementById('dashboard-museum-comment-filter');
+            if (museumCommentFilterCheck && !museumCommentFilterCheck.hasAttribute('data-bound')) {
+                museumCommentFilterCheck.addEventListener('change', () => {
+                    currentPage = 1;
+                    renderStats();
+                    renderTable();
+                });
+                museumCommentFilterCheck.setAttribute('data-bound', 'true');
+            }
+
             const searchInput = document.getElementById('dashboard-search-input');
             if (searchInput && !searchInput.hasAttribute('data-bound')) {
                 searchInput.addEventListener('input', (e) => {
@@ -912,6 +925,7 @@
             const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const museumCheckFilter = document.getElementById('dashboard-museum-check-filter') ? document.getElementById('dashboard-museum-check-filter').value : '전체';
             const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
+            const museumCommentFilterCheck = document.getElementById('dashboard-museum-comment-filter');
             
             let displayRegs = registrations;
             if (categoryFilter !== '전체') {
@@ -925,6 +939,9 @@
             }
             if (greemerFilterCheck && greemerFilterCheck.checked) {
                 displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
+            }
+            if (museumCommentFilterCheck && museumCommentFilterCheck.checked) {
+                displayRegs = displayRegs.filter(r => r.museumComment && r.museumComment.trim() !== '');
             }
             if (searchQuery) {
                 const q = searchQuery;
