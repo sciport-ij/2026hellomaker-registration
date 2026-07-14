@@ -1150,7 +1150,7 @@
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
             const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, ...allFields];
-            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || f.id === 'statusReason' || f.id === 'museumComment' || visibleColumns.has(f.id));
+            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
                 const th = document.createElement('th');
