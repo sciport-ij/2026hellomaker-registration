@@ -328,10 +328,10 @@
             console.error("Firebase initialization error:", error);
         }
 
-        function withTimeout(promise, ms = 8000) {
+        function withTimeout(promise, ms = 15000) {
             return Promise.race([
                 promise,
-                new Promise((_, reject) => setTimeout(() => reject(new Error("네트워크 응답 시간 초과 (서버 연결 실패)")), ms))
+                new Promise((_, reject) => setTimeout(() => reject(new Error("네트워크 응답 시간 초과 (서버 연결 지연)")), ms))
             ]);
         }
 
@@ -1499,7 +1499,17 @@
                 await refreshDashboard();
             } catch (error) {
                 console.error(error);
-                alert('수정에 실패했습니다.');
+                if (error.message && error.message.includes('지연')) {
+                    const idx = registrations.findIndex(r => r.id === currentEditingId);
+                    if (idx > -1) {
+                        registrations[idx] = { ...registrations[idx], ...updatedData };
+                    }
+                    document.getElementById('edit-modal').classList.add('hidden');
+                    renderStats();
+                    renderTable();
+                } else {
+                    alert('수정에 실패했습니다.');
+                }
             } finally {
                 saveBtn.textContent = originalText;
                 saveBtn.disabled = false;
