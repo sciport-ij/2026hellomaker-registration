@@ -179,14 +179,36 @@
                         </select>
                     </div>
                     
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">전화여부</label>
+                        <select id="edit-call-status-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
+                            <option value="미완료">미완료</option>
+                            <option value="완료">완료</option>
+                            <option value="부재중">부재중</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">오픈채팅방 입장</label>
+                        <select id="edit-chat-status-select" style="padding: 0.8rem; border-radius: 8px; border: 2px solid var(--primary); background: #ffffff; font-size: 1.1rem; font-weight: 600; color: var(--text-main); box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1);">
+                            <option value="미완료">미완료</option>
+                            <option value="완료">완료</option>
+                        </select>
+                    </div>
+
                     <div id="edit-reason-container" class="input-group full-width hidden" style="flex-basis: 100%; margin-top: 1rem; margin-bottom: 0;">
                         <label style="font-weight: bold; color: var(--primary);">미정/미선정 사유</label>
                         <input type="text" id="edit-reason-input" placeholder="사유를 입력해주세요" style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem;">
                     </div>
                     
-                    <div id="edit-museum-comment-container" class="input-group full-width" style="flex-basis: 100%; margin-top: 1rem; margin-bottom: 0;">
+                    <div id="edit-museum-comment-container" class="input-group" style="flex: 1; min-width: 300px; margin-top: 1rem; margin-bottom: 0;">
                         <label style="font-weight: bold; color: var(--primary);">과학관 코멘트 (내부용)</label>
                         <textarea id="edit-museum-comment-input" placeholder="과학관 내부 관리용 코멘트를 자유롭게 적어주세요." style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; min-height: 80px;"></textarea>
+                    </div>
+
+                    <div id="edit-greemer-comment-container" class="input-group" style="flex: 1; min-width: 300px; margin-top: 1rem; margin-bottom: 0;">
+                        <label style="font-weight: bold; color: var(--primary);">그리머 코멘트</label>
+                        <textarea id="edit-greemer-comment-input" placeholder="그리머 관련 코멘트를 자유롭게 적어주세요." style="padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 1rem; min-height: 80px;"></textarea>
                     </div>
                 </div>
                 
@@ -236,6 +258,23 @@
                             <option value="전체">확인 무관</option>
                             <option value="확인">확인</option>
                             <option value="미확인">미확인</option>
+                        </select>
+                    </div>
+                    <div>
+                        <strong style="margin-right: 1rem; color: var(--text-main);">전화여부:</strong>
+                        <select id="dashboard-call-status-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 120px;">
+                            <option value="전체">전체</option>
+                            <option value="완료">완료</option>
+                            <option value="미완료">미완료</option>
+                            <option value="부재중">부재중</option>
+                        </select>
+                    </div>
+                    <div>
+                        <strong style="margin-right: 1rem; color: var(--text-main);">오픈채팅방 입장:</strong>
+                        <select id="dashboard-chat-status-filter" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #cbd5e1; min-width: 120px;">
+                            <option value="전체">전체</option>
+                            <option value="완료">완료</option>
+                            <option value="미완료">미완료</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center; gap: 1rem;">
@@ -904,6 +943,26 @@
                 museumCommentFilterCheck.setAttribute('data-bound', 'true');
             }
 
+            const callStatusFilterSelect = document.getElementById('dashboard-call-status-filter');
+            if (callStatusFilterSelect && !callStatusFilterSelect.hasAttribute('data-bound')) {
+                callStatusFilterSelect.addEventListener('change', () => {
+                    currentPage = 1;
+                    renderStats();
+                    renderTable();
+                });
+                callStatusFilterSelect.setAttribute('data-bound', 'true');
+            }
+
+            const chatStatusFilterSelect = document.getElementById('dashboard-chat-status-filter');
+            if (chatStatusFilterSelect && !chatStatusFilterSelect.hasAttribute('data-bound')) {
+                chatStatusFilterSelect.addEventListener('change', () => {
+                    currentPage = 1;
+                    renderStats();
+                    renderTable();
+                });
+                chatStatusFilterSelect.setAttribute('data-bound', 'true');
+            }
+
             const searchInput = document.getElementById('dashboard-search-input');
             if (searchInput && !searchInput.hasAttribute('data-bound')) {
                 searchInput.addEventListener('input', (e) => {
@@ -924,6 +983,8 @@
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const museumCheckFilter = document.getElementById('dashboard-museum-check-filter') ? document.getElementById('dashboard-museum-check-filter').value : '전체';
+            const callStatusFilter = document.getElementById('dashboard-call-status-filter') ? document.getElementById('dashboard-call-status-filter').value : '전체';
+            const chatStatusFilter = document.getElementById('dashboard-chat-status-filter') ? document.getElementById('dashboard-chat-status-filter').value : '전체';
             const greemerFilterCheck = document.getElementById('dashboard-greemer-filter');
             const museumCommentFilterCheck = document.getElementById('dashboard-museum-comment-filter');
             
@@ -936,6 +997,12 @@
             }
             if (museumCheckFilter !== '전체') {
                 displayRegs = displayRegs.filter(r => (r.museumChecked || '미확인') === museumCheckFilter);
+            }
+            if (callStatusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.callStatus || '미완료') === callStatusFilter);
+            }
+            if (chatStatusFilter !== '전체') {
+                displayRegs = displayRegs.filter(r => (r.chatStatus || '미완료') === chatStatusFilter);
             }
             if (greemerFilterCheck && greemerFilterCheck.checked) {
                 displayRegs = displayRegs.filter(r => r.greemerCast === 'Y');
@@ -952,7 +1019,8 @@
                     const matchOrg = (r.groupName && String(r.groupName).toLowerCase().includes(q)) ||
                                      (r.schoolName && String(r.schoolName).toLowerCase().includes(q)) ||
                                      (r.companyName && String(r.companyName).toLowerCase().includes(q));
-                    return matchName || matchEmail || matchPhone || matchOrg;
+                    const matchEtc = r.etcComment && String(r.etcComment).toLowerCase().includes(q);
+                    return matchName || matchEmail || matchPhone || matchOrg || matchEtc;
                 });
             }
             return displayRegs;
@@ -965,7 +1033,7 @@
             
             const toggleItems = [];
             const processedFields = new Set();
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, ...allFields];
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, {id: 'greemerComment', label: '그리머 코멘트'}, {id: 'callStatus', label: '전화여부'}, {id: 'chatStatus', label: '오픈채팅방 입장'}, ...allFields];
 
             all.forEach(field => {
                 if (processedFields.has(field.id)) return;
@@ -1149,7 +1217,7 @@
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
-            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, ...allFields];
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, {id: 'greemerComment', label: '그리머 코멘트'}, {id: 'callStatus', label: '전화여부'}, {id: 'chatStatus', label: '오픈채팅방 입장'}, ...allFields];
             const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || visibleColumns.has(f.id));
             
             activeFields.forEach(f => {
@@ -1335,17 +1403,19 @@
             const reasonContainer = document.getElementById('edit-reason-container');
             const reasonInput = document.getElementById('edit-reason-input');
             const museumCommentInput = document.getElementById('edit-museum-comment-input');
+            const greemerCommentInput = document.getElementById('edit-greemer-comment-input');
+            const callStatusSelect = document.getElementById('edit-call-status-select');
+            const chatStatusSelect = document.getElementById('edit-chat-status-select');
             
             statusSelect.value = reg.status || '미정';
-            if (museumCheckSelect) {
-                museumCheckSelect.value = reg.museumChecked || '미확인';
-            }
-            if (reasonInput) {
-                reasonInput.value = reg.statusReason || '';
-            }
-            if (museumCommentInput) {
-                museumCommentInput.value = reg.museumComment || '';
-            }
+            if (museumCheckSelect) museumCheckSelect.value = reg.museumChecked || '미확인';
+            if (callStatusSelect) callStatusSelect.value = reg.callStatus || '미완료';
+            if (chatStatusSelect) chatStatusSelect.value = reg.chatStatus || '미완료';
+            
+            if (reasonInput) reasonInput.value = reg.statusReason || '';
+            if (museumCommentInput) museumCommentInput.value = reg.museumComment || '';
+            if (greemerCommentInput) greemerCommentInput.value = reg.greemerComment || '';
+            
             if (reasonContainer) {
                 if (['미정', '미선정'].includes(statusSelect.value)) {
                     reasonContainer.classList.remove('hidden');
@@ -1456,12 +1526,16 @@
         async function handleSaveEdit(btnId) {
             const status = document.getElementById('edit-status-select').value;
             const museumChecked = document.getElementById('edit-museum-check-select') ? document.getElementById('edit-museum-check-select').value : '미확인';
+            const callStatus = document.getElementById('edit-call-status-select') ? document.getElementById('edit-call-status-select').value : '미완료';
+            const chatStatus = document.getElementById('edit-chat-status-select') ? document.getElementById('edit-chat-status-select').value : '미완료';
             const statusReason = document.getElementById('edit-reason-input') ? document.getElementById('edit-reason-input').value : '';
             const museumComment = document.getElementById('edit-museum-comment-input') ? document.getElementById('edit-museum-comment-input').value : '';
+            const greemerComment = document.getElementById('edit-greemer-comment-input') ? document.getElementById('edit-greemer-comment-input').value : '';
+            
             const reg = registrations.find(r => r.id === currentEditingId);
             if (!reg) return;
             
-            const updatedData = { status, museumChecked, statusReason, museumComment };
+            const updatedData = { status, museumChecked, callStatus, chatStatus, statusReason, museumComment, greemerComment };
             
             const schema = SCHEMAS[reg.category] || [];
             const filteredCustomFields = customFields.filter(f => !f.targetCategory || f.targetCategory === '모든 구분' || f.targetCategory === reg.category);
