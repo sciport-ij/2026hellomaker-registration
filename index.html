@@ -1667,27 +1667,31 @@
             }
             
             const categoryFilter = document.getElementById('dashboard-category-filter') ? document.getElementById('dashboard-category-filter').value : '전체';
-            const statusFilter = document.getElementById('dashboard-status-filter') ? document.getElementById('dashboard-status-filter').value : '전체';
             const allFields = getAllUniqueFields(categoryFilter);
             
-            let displayRegs = registrations;
-            if (categoryFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => r.category === categoryFilter);
-            }
-            if (statusFilter !== '전체') {
-                displayRegs = displayRegs.filter(r => (r.status || '미정') === statusFilter);
+            let displayRegs = getFilteredRegistrations();
+            
+            if (displayRegs.length === 0) {
+                alert('현재 필터 조건에 해당하는 데이터가 없습니다.');
+                return;
             }
 
-            const activeFields = allFields.filter(f => visibleColumns.has(f.id));
-            const headers = ['메이커 구분', '선정 상태', ...activeFields.map(f => f.label)];
-            const keys = ['category', 'status', ...activeFields.map(f => f.id)];
+            const all = [{id: 'category', label: '메이커 구분'}, {id: 'museumChecked', label: '과학관 확인'}, {id: 'status', label: '선정 상태'}, {id: 'statusReason', label: '사유'}, {id: 'museumComment', label: '과학관 코멘트'}, {id: 'greemerComment', label: '그리머 코멘트'}, {id: 'callStatus', label: '전화여부'}, {id: 'chatStatus', label: '오픈채팅방 입장'}, ...allFields];
+            const activeFields = all.filter(f => f.id === 'status' || f.id === 'museumChecked' || visibleColumns.has(f.id));
+            const headers = activeFields.map(f => f.label);
+            const keys = activeFields.map(f => f.id);
             
             const dataToExport = displayRegs.map(reg => {
                 const row = {};
                 keys.forEach((key, index) => {
                     if (key === 'status') {
                         row[headers[index]] = reg[key] || '미정';
+                    } else if (key === 'museumChecked') {
+                        row[headers[index]] = reg[key] || '미확인';
+                    } else if (key === 'callStatus' || key === 'chatStatus') {
+                        row[headers[index]] = reg[key] || '미완료';
                     } else {
+                        // For checkboxes, it will output 'Y' / 'N' which is good for excel
                         row[headers[index]] = reg[key] || '';
                     }
                 });
